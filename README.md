@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CartórioHub
 
-## Getting Started
+ERP administrativo para cartórios e serventias, com foco em backoffice interno: financeiro, fornecedores, contratos, RH, agenda, documentos, tarefas, central oficial, LGPD e auditoria.
 
-First, run the development server:
+O sistema não implementa atos registrais, escrituras, certidões ou protocolos cartorários. A arquitetura é multi-tenant por `cartorio_id` e preparada para Supabase/PostgreSQL com RLS.
+
+## Stack
+
+- Next.js App Router + TypeScript
+- Tailwind CSS + componentes no padrão shadcn/ui
+- Supabase Auth, PostgreSQL e Storage
+- React Hook Form + Zod
+- FullCalendar
+- dnd-kit para Kanban
+- Recharts para gráficos
+
+## Rodando localmente
 
 ```bash
+npm install
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Sem variáveis Supabase, a aplicação roda em modo demo local com dados seedados em memória. Nesse modo, formulários validam os dados e exibem sucesso, mas a persistência real acontece apenas quando o Supabase está configurado.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Supabase
 
-## Learn More
+1. Crie um projeto Supabase.
+2. Configure `.env.local` com `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+3. Aplique a migration:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+supabase db push
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4. Rode o seed:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+supabase db reset
+```
 
-## Deploy on Vercel
+Usuário demo do seed:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- E-mail: `admin@cartoriohub.local`
+- Senha: `CartorioHub@123`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Estrutura
+
+```text
+src/
+  app/                 Rotas App Router
+  components/
+    layout/            Sidebar e topbar
+    shared/            DataTable, StatCard, Kanban, calendário, badges
+    ui/                Componentes base shadcn-like
+  lib/                 Supabase, auth, permissões, dados e helpers
+  modules/             Actions, queries e schemas por domínio
+supabase/
+  migrations/          Schema SQL com RLS
+  seed.sql             Dados iniciais
+```
+
+## Multi-tenant e segurança
+
+- Todas as tabelas administrativas possuem `cartorio_id`.
+- RLS isola leitura, inserção e atualização por `app.current_cartorio_id()`.
+- `requirePermission(permission)` valida permissões no servidor.
+- Operações sensíveis registram `auditoria_logs`.
+- Registros críticos usam soft delete com `deleted_at`, `deleted_by` e `motivo_exclusao`.
+
+## Módulos entregues no MVP
+
+- Autenticação Supabase com fallback demo
+- Layout administrativo responsivo
+- Dashboard com indicadores e gráficos
+- Central Oficial manual e fontes monitoradas
+- Agenda com FullCalendar
+- Financeiro, contas, boletos e livro caixa
+- Fornecedores e contratos
+- Inventário inicial
+- RH, funcionários e atestados
+- LGPD básico com incidentes
+- Documentos internos
+- Tarefas Kanban com drag and drop
+- Chat interno estrutural
+- Relatórios estruturais
+- Usuários, permissões e auditoria
