@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { money, optionalText, requiredText } from "@/lib/validation";
+import { money, optionalCpf, optionalText, requiredText } from "@/lib/validation";
 
 export const funcionarioSchema = z.object({
   nome: requiredText("Informe o nome"),
-  cpf: optionalText,
+  cpf: optionalCpf,
   email: z.string().email("E-mail inválido").or(z.literal("")).transform((value) => value || null).optional(),
   telefone: optionalText,
   cargo: requiredText("Informe o cargo"),

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { isValidCPF, isValidCpfCnpj, maskCPF, maskCpfCnpj } from "@/lib/cpf-cnpj";
 import {
   Dialog,
   DialogContent,
@@ -27,7 +28,7 @@ import type { ActionResult } from "@/lib/types";
 export type EntityField = {
   name: string;
   label: string;
-  type?: "text" | "email" | "number" | "money" | "date" | "datetime-local" | "textarea" | "select" | "checkbox" | "url";
+  type?: "text" | "email" | "number" | "money" | "date" | "datetime-local" | "textarea" | "select" | "checkbox" | "url" | "cpf" | "cpf-cnpj";
   required?: boolean;
   options?: { label: string; value: string }[];
   defaultValue?: string | number | boolean | null;
@@ -163,6 +164,22 @@ function FieldControl({
     );
   }
 
+  if (field.type === "cpf" || field.type === "cpf-cnpj") {
+    const applyMask = field.type === "cpf" ? maskCPF : maskCpfCnpj;
+    const maxLen = field.type === "cpf" ? 14 : 18; // 000.000.000-00 = 14, 00.000.000/0000-00 = 18
+    return (
+      <Input
+        id={field.name}
+        value={String(value ?? "")}
+        onChange={(e) => setValue(field.name, applyMask(e.target.value), { shouldValidate: true })}
+        placeholder={field.placeholder ?? (field.type === "cpf" ? "000.000.000-00" : "CPF ou CNPJ")}
+        inputMode="numeric"
+        maxLength={maxLen}
+        className="rounded-md bg-white"
+      />
+    );
+  }
+
   return (
     <Input
       id={field.name}
@@ -188,6 +205,14 @@ function buildSchema(fields: EntityField[]) {
           schema = field.required
             ? z.string().email("E-mail inválido")
             : z.string().email("E-mail inválido").or(z.literal("")).optional();
+        } else if (field.type === "cpf") {
+          schema = field.required
+            ? z.string().min(1, "Informe o CPF").refine(isValidCPF, "CPF inválido")
+            : z.string().refine(isValidCPF, "CPF inválido").or(z.literal("")).optional();
+        } else if (field.type === "cpf-cnpj") {
+          schema = field.required
+            ? z.string().min(1, "Informe CPF ou CNPJ").refine(isValidCpfCnpj, "Informe um CPF ou CNPJ válido")
+            : z.string().refine(isValidCpfCnpj, "Informe um CPF ou CNPJ válido").or(z.literal("")).optional();
         } else {
           schema = field.required ? z.string().min(1, "Campo obrigatório") : z.string().optional();
         }

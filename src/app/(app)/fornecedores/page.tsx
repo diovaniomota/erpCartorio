@@ -7,7 +7,7 @@ import { getFornecedores } from "@/modules/fornecedores/queries";
 const fields: EntityField[] = [
   { name: "nome", label: "Nome", required: true },
   { name: "categoria", label: "Categoria", required: true },
-  { name: "documento", label: "CPF/CNPJ" },
+  { name: "documento", label: "CPF/CNPJ", type: "cpf-cnpj" },
   { name: "telefone", label: "Telefone" },
   { name: "email", label: "E-mail", type: "email" },
   { name: "contato_responsavel", label: "Contato responsável" },

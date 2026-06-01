@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { optionalText, requiredText } from "@/lib/validation";
+import { optionalCpfCnpj, optionalText, requiredText } from "@/lib/validation";
 
 export const fornecedorSchema = z.object({
   nome: requiredText("Informe o nome do fornecedor"),
   categoria: requiredText("Informe a categoria"),
-  documento: optionalText,
+  documento: optionalCpfCnpj,
   telefone: optionalText,
   email: z.string().email("E-mail inválido").or(z.literal("")).transform((value) => value || null).optional(),
   endereco: optionalText,

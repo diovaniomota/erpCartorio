@@ -1,3 +1,10 @@
+-- ─── Remover registro de teste inválido ──────────────────────────────────────
+-- Fornecedor "Fornecedor Teste QA" com CPF/CNPJ = 'abc123xyz' (atualmente arquivado)
+-- Hard-delete: remove definitivamente, já que é dado de teste sem valor real
+DELETE FROM fornecedores
+WHERE nome = 'Fornecedor Teste QA'
+  AND documento = 'abc123xyz';
+
 -- Script para substituir dados pessoais reais por dados fictícios
 -- Execute no SQL Editor do Supabase Studio antes de usar este ambiente como demo
 --

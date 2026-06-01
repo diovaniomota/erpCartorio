@@ -6,7 +6,7 @@ import { getFuncionarios } from "@/modules/rh/queries";
 
 const fields: EntityField[] = [
   { name: "nome", label: "Nome", required: true },
-  { name: "cpf", label: "CPF" },
+  { name: "cpf", label: "CPF", type: "cpf" },
   { name: "email", label: "E-mail", type: "email" },
   { name: "telefone", label: "Telefone" },
   { name: "cargo", label: "Cargo", required: true },

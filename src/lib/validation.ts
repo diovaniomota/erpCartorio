@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidCPF, isValidCpfCnpj } from "@/lib/cpf-cnpj";
 
 export const optionalText = z
   .string()
@@ -24,4 +25,19 @@ export const uuidField = z
   .trim()
   .transform((value) => (value.length ? value : null))
   .nullable()
+  .optional();
+
+// CPF/CNPJ — same pattern as email: valid value OR empty string (→ null), both optional
+export const optionalCpf = z
+  .string()
+  .refine((v) => isValidCPF(v), "CPF inválido")
+  .or(z.literal(""))
+  .transform((v) => (v === "" ? null : v))
+  .optional();
+
+export const optionalCpfCnpj = z
+  .string()
+  .refine((v) => isValidCpfCnpj(v), "Informe um CPF ou CNPJ válido")
+  .or(z.literal(""))
+  .transform((v) => (v === "" ? null : v))
   .optional();
