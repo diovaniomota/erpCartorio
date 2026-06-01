@@ -1,10 +1,11 @@
+import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { env } from "@/lib/env";
 
 export async function createSupabaseServerClient() {
   if (!env.supabaseUrl || !env.supabaseAnonKey) {
-    throw new Error("Supabase não configurado. Defina NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY.");
+    redirect("/login");
   }
 
   const cookieStore = await cookies();
