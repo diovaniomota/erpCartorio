@@ -1,6 +1,7 @@
 import { listScopedRecords, getScopedRecord } from "@/lib/data";
 
-export const getFuncionarios = () => listScopedRecords("funcionarios", { orderBy: "nome", ascending: true });
+export const getFuncionarios = (opts?: { includeDeleted?: boolean }) =>
+  listScopedRecords("funcionarios", { orderBy: "nome", ascending: true, ...opts });
 export const getFuncionario = (id: string) => getScopedRecord("funcionarios", id);
 
 async function funcionariosMap() {

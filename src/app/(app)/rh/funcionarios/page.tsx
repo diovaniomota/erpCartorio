@@ -1,7 +1,7 @@
 import { EntityFormDialog, type EntityField } from "@/components/shared/entity-form-dialog";
 import { PageHeader } from "@/components/shared/page-header";
 import { StaffDirectory } from "@/components/shared/record-views";
-import { createFuncionario, deleteFuncionario } from "@/modules/rh/actions";
+import { createFuncionario, deleteFuncionario, restoreFuncionario } from "@/modules/rh/actions";
 import { getFuncionarios } from "@/modules/rh/queries";
 
 const fields: EntityField[] = [
@@ -19,7 +19,7 @@ const fields: EntityField[] = [
 ];
 
 export default async function FuncionariosPage() {
-  const funcionarios = await getFuncionarios();
+  const funcionarios = await getFuncionarios({ includeDeleted: true });
 
   return (
     <>
@@ -28,7 +28,7 @@ export default async function FuncionariosPage() {
         description="Cadastro funcional com dados contratuais e status administrativo."
         actions={<EntityFormDialog title="Novo funcionário" fields={fields} action={createFuncionario} />}
       />
-      <StaffDirectory funcionarios={funcionarios} deleteAction={deleteFuncionario} />
+      <StaffDirectory funcionarios={funcionarios} deleteAction={deleteFuncionario} restoreAction={restoreFuncionario} />
     </>
   );
 }

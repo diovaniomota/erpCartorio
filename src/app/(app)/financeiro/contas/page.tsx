@@ -1,7 +1,7 @@
 import { EntityFormDialog, type EntityField } from "@/components/shared/entity-form-dialog";
 import { PageHeader } from "@/components/shared/page-header";
 import { FinancialLedger } from "@/components/shared/record-views";
-import { createContaFinanceira, deleteContaFinanceira } from "@/modules/financeiro/actions";
+import { createContaFinanceira, deleteContaFinanceira, restoreContaFinanceira } from "@/modules/financeiro/actions";
 import { getFinanceiroCategorias, getContasFinanceiras } from "@/modules/financeiro/queries";
 import { getContratos } from "@/modules/contratos/queries";
 import { getFornecedores } from "@/modules/fornecedores/queries";
@@ -13,7 +13,7 @@ type ContasPageProps = {
 export default async function ContasPage({ searchParams }: ContasPageProps) {
   const params = await searchParams;
   const [contas, fornecedores, contratos, categorias] = await Promise.all([
-    getContasFinanceiras(),
+    getContasFinanceiras({ includeDeleted: true }),
     getFornecedores(),
     getContratos(),
     getFinanceiroCategorias(),
@@ -46,7 +46,7 @@ export default async function ContasPage({ searchParams }: ContasPageProps) {
         }
         actions={<EntityFormDialog title="Nova conta" fields={fields} action={createContaFinanceira} />}
       />
-      <FinancialLedger contas={contasFiltradas} deleteAction={deleteContaFinanceira} />
+      <FinancialLedger contas={contasFiltradas} deleteAction={deleteContaFinanceira} restoreAction={restoreContaFinanceira} />
     </>
   );
 }

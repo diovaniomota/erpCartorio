@@ -1,7 +1,7 @@
 import { EntityFormDialog, type EntityField } from "@/components/shared/entity-form-dialog";
 import { PageHeader } from "@/components/shared/page-header";
 import { SupplierDirectory } from "@/components/shared/record-views";
-import { createFornecedor, deleteFornecedor } from "@/modules/fornecedores/actions";
+import { createFornecedor, deleteFornecedor, restoreFornecedor } from "@/modules/fornecedores/actions";
 import { getFornecedores } from "@/modules/fornecedores/queries";
 
 const fields: EntityField[] = [
@@ -18,7 +18,7 @@ const fields: EntityField[] = [
 ];
 
 export default async function FornecedoresPage() {
-  const fornecedores = await getFornecedores();
+  const fornecedores = await getFornecedores({ includeDeleted: true });
 
   return (
     <>
@@ -27,7 +27,7 @@ export default async function FornecedoresPage() {
         description="Cadastro administrativo de fornecedores, contatos, dados bancários e vínculos com contratos e contas."
         actions={<EntityFormDialog title="Novo fornecedor" fields={fields} action={createFornecedor} />}
       />
-      <SupplierDirectory fornecedores={fornecedores} deleteAction={deleteFornecedor} />
+      <SupplierDirectory fornecedores={fornecedores} deleteAction={deleteFornecedor} restoreAction={restoreFornecedor} />
     </>
   );
 }

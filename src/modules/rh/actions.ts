@@ -1,6 +1,6 @@
 "use server";
 
-import { createScopedRecord, softDeleteScopedRecord, updateScopedRecord } from "@/lib/server-actions";
+import { createScopedRecord, restoreScopedRecord, softDeleteScopedRecord, updateScopedRecord } from "@/lib/server-actions";
 import { atestadoSchema, beneficioSchema, feriasSchema, funcionarioSchema, pontoSchema } from "@/modules/rh/schemas";
 
 export async function createFuncionario(input: unknown) {
@@ -105,5 +105,14 @@ export async function deleteBeneficio(id: string) {
     permission: "gerenciar_funcionarios",
     modulo: "rh",
     path: "/rh/beneficios",
+  });
+}
+
+export async function restoreFuncionario(id: string) {
+  return restoreScopedRecord(id, {
+    table: "funcionarios",
+    permission: "gerenciar_funcionarios",
+    modulo: "rh",
+    path: "/rh/funcionarios",
   });
 }

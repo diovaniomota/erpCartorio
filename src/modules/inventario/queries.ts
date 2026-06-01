@@ -1,6 +1,7 @@
 import { getScopedRecord, listScopedRecords } from "@/lib/data";
 
-export const getInventarioItens = () => listScopedRecords("inventario_itens", { orderBy: "nome", ascending: true });
+export const getInventarioItens = (opts?: { includeDeleted?: boolean }) =>
+  listScopedRecords("inventario_itens", { orderBy: "nome", ascending: true, ...opts });
 export const getInventarioItem = (id: string) => getScopedRecord("inventario_itens", id);
 
 export async function getInventarioMovimentacoes() {

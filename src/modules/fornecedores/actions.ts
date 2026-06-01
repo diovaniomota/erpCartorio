@@ -1,6 +1,6 @@
 "use server";
 
-import { createScopedRecord, softDeleteScopedRecord, updateScopedRecord } from "@/lib/server-actions";
+import { createScopedRecord, restoreScopedRecord, softDeleteScopedRecord, updateScopedRecord } from "@/lib/server-actions";
 import { fornecedorSchema } from "@/modules/fornecedores/schemas";
 
 export async function createFornecedor(input: unknown) {
@@ -25,6 +25,15 @@ export async function updateFornecedor(id: string, input: unknown) {
 
 export async function deleteFornecedor(id: string) {
   return softDeleteScopedRecord(id, {
+    table: "fornecedores",
+    permission: "gerenciar_fornecedores",
+    modulo: "fornecedores",
+    path: "/fornecedores",
+  });
+}
+
+export async function restoreFornecedor(id: string) {
+  return restoreScopedRecord(id, {
     table: "fornecedores",
     permission: "gerenciar_fornecedores",
     modulo: "fornecedores",

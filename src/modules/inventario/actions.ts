@@ -1,6 +1,6 @@
 "use server";
 
-import { createScopedRecord, softDeleteScopedRecord } from "@/lib/server-actions";
+import { createScopedRecord, restoreScopedRecord, softDeleteScopedRecord } from "@/lib/server-actions";
 import {
   inventarioItemSchema,
   inventarioManutencaoSchema,
@@ -61,5 +61,14 @@ export async function deleteInventarioManutencao(id: string) {
     permission: "gerenciar_inventario",
     modulo: "inventario",
     path: "/inventario/manutencoes",
+  });
+}
+
+export async function restoreInventarioItem(id: string) {
+  return restoreScopedRecord(id, {
+    table: "inventario_itens",
+    permission: "gerenciar_inventario",
+    modulo: "inventario",
+    path: "/inventario",
   });
 }

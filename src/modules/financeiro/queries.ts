@@ -1,8 +1,8 @@
 import { listScopedRecords } from "@/lib/data";
 
-export async function getContasFinanceiras() {
+export async function getContasFinanceiras(opts?: { includeDeleted?: boolean }) {
   const [contas, fornecedores, categorias] = await Promise.all([
-    listScopedRecords("financeiro_contas", { orderBy: "data_vencimento", ascending: true }),
+    listScopedRecords("financeiro_contas", { orderBy: "data_vencimento", ascending: true, ...opts }),
     listScopedRecords("fornecedores", { orderBy: "nome", ascending: true }),
     listScopedRecords("financeiro_categorias", { orderBy: "nome", ascending: true }),
   ]);

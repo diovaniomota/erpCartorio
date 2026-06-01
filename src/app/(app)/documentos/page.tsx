@@ -1,7 +1,7 @@
 import { EntityFormDialog, type EntityField } from "@/components/shared/entity-form-dialog";
 import { PageHeader } from "@/components/shared/page-header";
 import { DocumentLibrary } from "@/components/shared/record-views";
-import { createDocumentoInterno, deleteDocumentoInterno } from "@/modules/documentos/actions";
+import { createDocumentoInterno, deleteDocumentoInterno, restoreDocumentoInterno } from "@/modules/documentos/actions";
 import { getDocumentosInternos } from "@/modules/documentos/queries";
 
 const fields: EntityField[] = [
@@ -17,7 +17,7 @@ const fields: EntityField[] = [
 ];
 
 export default async function DocumentosPage() {
-  const docs = await getDocumentosInternos();
+  const docs = await getDocumentosInternos({ includeDeleted: true });
 
   return (
     <>
@@ -26,7 +26,7 @@ export default async function DocumentosPage() {
         description="Documentos administrativos com categoria, validade, controle de acesso, vínculo e arquivo."
         actions={<EntityFormDialog title="Novo documento" fields={fields} action={createDocumentoInterno} />}
       />
-      <DocumentLibrary docs={docs} deleteAction={deleteDocumentoInterno} />
+      <DocumentLibrary docs={docs} deleteAction={deleteDocumentoInterno} restoreAction={restoreDocumentoInterno} />
     </>
   );
 }

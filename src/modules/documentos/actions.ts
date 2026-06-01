@@ -1,6 +1,6 @@
 "use server";
 
-import { createScopedRecord, softDeleteScopedRecord, updateScopedRecord } from "@/lib/server-actions";
+import { createScopedRecord, restoreScopedRecord, softDeleteScopedRecord, updateScopedRecord } from "@/lib/server-actions";
 import { documentoInternoSchema } from "@/modules/documentos/schemas";
 
 export async function createDocumentoInterno(input: unknown) {
@@ -25,6 +25,15 @@ export async function updateDocumentoInterno(id: string, input: unknown) {
 
 export async function deleteDocumentoInterno(id: string) {
   return softDeleteScopedRecord(id, {
+    table: "documentos_internos",
+    permission: "enviar_documentos",
+    modulo: "documentos",
+    path: "/documentos",
+  });
+}
+
+export async function restoreDocumentoInterno(id: string) {
+  return restoreScopedRecord(id, {
     table: "documentos_internos",
     permission: "enviar_documentos",
     modulo: "documentos",

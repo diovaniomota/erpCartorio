@@ -172,3 +172,42 @@ export async function softDeleteScopedRecord(
     };
   }
 }
+
+export async function restoreScopedRecord(
+  id: string,
+  options: Omit<MutationOptions, "schema">,
+): Promise<ActionResult> {
+  try {
+    const context = await requirePermission(options.permission);
+
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from(options.table)
+      .update({ deleted_at: null, deleted_by: null, motivo_exclusao: null })
+      .eq("cartorio_id", context.cartorioId)
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    await registerAuditLog({
+      cartorioId: context.cartorioId,
+      userId: context.userId,
+      acao: "restore",
+      modulo: options.modulo,
+      tabela: options.table,
+      registroId: id,
+      dadosNovos: data as Json,
+    });
+
+    if (options.path) revalidatePath(options.path);
+
+    return { ok: true, message: "Registro restaurado com sucesso." };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : "Não foi possível restaurar o registro.",
+    };
+  }
+}

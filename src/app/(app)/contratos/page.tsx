@@ -1,12 +1,12 @@
 import { EntityFormDialog, type EntityField } from "@/components/shared/entity-form-dialog";
 import { PageHeader } from "@/components/shared/page-header";
 import { ContractPipeline } from "@/components/shared/record-views";
-import { createContrato, deleteContrato } from "@/modules/contratos/actions";
+import { createContrato, deleteContrato, restoreContrato } from "@/modules/contratos/actions";
 import { getContratos } from "@/modules/contratos/queries";
 import { getFornecedores } from "@/modules/fornecedores/queries";
 
 export default async function ContratosPage() {
-  const [contratos, fornecedores] = await Promise.all([getContratos(), getFornecedores()]);
+  const [contratos, fornecedores] = await Promise.all([getContratos({ includeDeleted: true }), getFornecedores()]);
   const fields: EntityField[] = [
     { name: "nome", label: "Nome", required: true },
     { name: "numero", label: "Número" },
@@ -28,7 +28,7 @@ export default async function ContratosPage() {
         description="Gestão de contratos administrativos, vencimentos, reajustes e arquivos vinculados."
         actions={<EntityFormDialog title="Novo contrato" fields={fields} action={createContrato} />}
       />
-      <ContractPipeline contratos={contratos} deleteAction={deleteContrato} />
+      <ContractPipeline contratos={contratos} deleteAction={deleteContrato} restoreAction={restoreContrato} />
     </>
   );
 }

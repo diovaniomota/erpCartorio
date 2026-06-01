@@ -2,7 +2,7 @@ import { EntityFormDialog, type EntityField } from "@/components/shared/entity-f
 import { PageHeader } from "@/components/shared/page-header";
 import { AssetGrid } from "@/components/shared/record-views";
 import { StatCard } from "@/components/shared/stat-card";
-import { createInventarioItem, deleteInventarioItem } from "@/modules/inventario/actions";
+import { createInventarioItem, deleteInventarioItem, restoreInventarioItem } from "@/modules/inventario/actions";
 import { getInventarioItens } from "@/modules/inventario/queries";
 import { getFornecedores } from "@/modules/fornecedores/queries";
 import { getFuncionarios } from "@/modules/rh/queries";
@@ -14,7 +14,7 @@ type InventarioPageProps = {
 
 export default async function InventarioPage({ searchParams }: InventarioPageProps) {
   const params = await searchParams;
-  const [itens, fornecedores, funcionarios] = await Promise.all([getInventarioItens(), getFornecedores(), getFuncionarios()]);
+  const [itens, fornecedores, funcionarios] = await Promise.all([getInventarioItens({ includeDeleted: true }), getFornecedores(), getFuncionarios()]);
   const statusFiltro = params?.status;
   const itensFiltrados = statusFiltro ? itens.filter((item) => item.status === statusFiltro) : itens;
   const fields: EntityField[] = [
@@ -48,7 +48,7 @@ export default async function InventarioPage({ searchParams }: InventarioPagePro
         <StatCard title="Em manutenção" value={itens.filter((item) => item.status === "em manutenção").length} icon={Wrench} tone="warning" />
         <StatCard title="Patrimônio total" value={itens.reduce((sum, item) => sum + Number(item.valor_compra ?? 0), 0)} format="currency" icon={CircleDollarSign} tone="success" />
       </div>
-      <AssetGrid itens={itensFiltrados} deleteAction={deleteInventarioItem} />
+      <AssetGrid itens={itensFiltrados} deleteAction={deleteInventarioItem} restoreAction={restoreInventarioItem} />
     </>
   );
 }

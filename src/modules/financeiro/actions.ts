@@ -118,3 +118,12 @@ export async function registrarPagamento(input: unknown): Promise<ActionResult> 
     };
   }
 }
+
+export async function restoreContaFinanceira(id: string) {
+  return restoreScopedRecord(id, {
+    table: "financeiro_contas",
+    permission: "gerenciar_financeiro",
+    modulo: "financeiro",
+    path: "/financeiro/contas",
+  });
+}

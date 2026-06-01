@@ -1,8 +1,8 @@
 import { listScopedRecords, getScopedRecord } from "@/lib/data";
 
-export async function getContratos() {
+export async function getContratos(opts?: { includeDeleted?: boolean }) {
   const [contratos, fornecedores] = await Promise.all([
-    listScopedRecords("contratos", { orderBy: "data_vencimento", ascending: true }),
+    listScopedRecords("contratos", { orderBy: "data_vencimento", ascending: true, ...opts }),
     listScopedRecords("fornecedores", { orderBy: "nome", ascending: true }),
   ]);
   const fornecedorPorId = new Map(fornecedores.map((item) => [item.id, item.nome]));
