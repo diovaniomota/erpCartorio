@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Save } from "lucide-react";
+import { Plus, Save, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -33,6 +33,10 @@ export type EntityField = {
   options?: { label: string; value: string }[];
   defaultValue?: string | number | boolean | null;
   placeholder?: string;
+  managedOptions?: {
+    action: (values: string[]) => Promise<ActionResult<string[]>>;
+    minOptions?: number;
+  };
 };
 
 type EntityFormDialogProps = {
@@ -135,6 +139,10 @@ function FieldControl({
   }
 
   if (field.type === "select") {
+    if (field.managedOptions) {
+      return <ManagedSelect field={field} setValue={setValue} value={value} />;
+    }
+
     return (
       <Select value={String(value ?? "")} onValueChange={(nextValue) => setValue(field.name, nextValue, { shouldValidate: true })}>
         <SelectTrigger id={field.name} className="rounded-md bg-white">
@@ -189,6 +197,129 @@ function FieldControl({
       className="rounded-md bg-white"
       {...register(field.name)}
     />
+  );
+}
+
+function ManagedSelect({
+  field,
+  setValue,
+  value,
+}: {
+  field: EntityField;
+  setValue: ReturnType<typeof useForm<Record<string, unknown>>>["setValue"];
+  value: unknown;
+}) {
+  const [options, setOptions] = useState(() => field.options ?? []);
+  const [draft, setDraft] = useState("");
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+  const selectedValue = String(value ?? "");
+  const minOptions = field.managedOptions?.minOptions ?? 1;
+
+  function persist(nextOptions: { label: string; value: string }[], nextSelectedValue?: string) {
+    if (!field.managedOptions) return;
+
+    startTransition(async () => {
+      const result = await field.managedOptions!.action(nextOptions.map((option) => option.value));
+
+      if (result.ok) {
+        const savedOptions = (result.data ?? nextOptions.map((option) => option.value)).map((optionValue) => ({
+          label: optionValue,
+          value: optionValue,
+        }));
+        setOptions(savedOptions);
+        if (nextSelectedValue) {
+          setValue(field.name, nextSelectedValue, { shouldValidate: true, shouldDirty: true });
+        }
+        toast.success(result.message);
+        router.refresh();
+      } else {
+        toast.error(result.message);
+      }
+    });
+  }
+
+  function addOption() {
+    const nextValue = draft.trim();
+    if (!nextValue) return;
+
+    const exists = options.some((option) => option.value.toLocaleLowerCase("pt-BR") === nextValue.toLocaleLowerCase("pt-BR"));
+    if (exists) {
+      setValue(field.name, nextValue, { shouldValidate: true, shouldDirty: true });
+      setDraft("");
+      return;
+    }
+
+    const nextOptions = [...options, { label: nextValue, value: nextValue }];
+    setDraft("");
+    persist(nextOptions, nextValue);
+  }
+
+  function removeOption(optionValue: string) {
+    if (options.length <= minOptions) {
+      toast.error("Mantenha pelo menos um tipo.");
+      return;
+    }
+
+    const nextOptions = options.filter((option) => option.value !== optionValue);
+    const nextSelectedValue = selectedValue === optionValue ? nextOptions[0]?.value : selectedValue;
+    persist(nextOptions, nextSelectedValue);
+  }
+
+  return (
+    <div className="space-y-2 rounded-md border border-slate-200 bg-white p-2">
+      <Select value={selectedValue} onValueChange={(nextValue) => setValue(field.name, nextValue, { shouldValidate: true })}>
+        <SelectTrigger id={field.name} className="rounded-md bg-white">
+          <SelectValue placeholder={field.placeholder ?? "Selecione"} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <div className="flex gap-2">
+        <Input
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              addOption();
+            }
+          }}
+          placeholder="Novo tipo"
+          className="h-8 rounded-md bg-white"
+        />
+        <Button type="button" size="sm" variant="outline" onClick={addOption} disabled={isPending || !draft.trim()}>
+          <Plus className="h-3.5 w-3.5" />
+          Adicionar
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((option) => (
+          <span
+            key={option.value}
+            className="inline-flex max-w-full items-center gap-1 rounded-full border border-slate-200 bg-slate-50 py-1 pl-2.5 pr-1 text-xs font-medium text-slate-700"
+          >
+            <span className="truncate">{option.label}</span>
+            <button
+              type="button"
+              onClick={() => removeOption(option.value)}
+              disabled={isPending || options.length <= minOptions}
+              className="inline-grid h-5 w-5 shrink-0 place-items-center rounded-full text-slate-400 hover:bg-white hover:text-red-600 disabled:pointer-events-none disabled:opacity-40"
+              aria-label={`Excluir tipo ${option.label}`}
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 

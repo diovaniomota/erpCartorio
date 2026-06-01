@@ -4,7 +4,7 @@ import { optionalText, requiredText, uuidField } from "@/lib/validation";
 export const agendaEventoSchema = z.object({
   titulo: requiredText("Informe o título"),
   descricao: optionalText,
-  tipo: z.enum(["reunião", "boleto", "contrato", "férias", "atestado", "LGPD", "tarefa", "tribunal", "manutenção", "treinamento", "manual"]).default("manual"),
+  tipo: requiredText("Informe o tipo").default("manual"),
   data_inicio: requiredText("Informe o início"),
   data_fim: requiredText("Informe o fim"),
   dia_todo: z.coerce.boolean().default(false),

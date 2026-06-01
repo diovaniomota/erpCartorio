@@ -2,289 +2,229 @@ import {
   AlertTriangle,
   Banknote,
   CalendarClock,
-  CircleDollarSign,
-  CreditCard,
+  CheckCircle2,
+  CircleAlert,
   Receipt,
   TrendingDown,
   TrendingUp,
-  WalletCards,
   type LucideIcon,
 } from "lucide-react";
-import { DataTable } from "@/components/shared/data-table";
+import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { getContasFinanceiras, getLivroCaixa } from "@/modules/financeiro/queries";
 
-type MetricTone = "success" | "warning" | "danger" | "info" | "neutral";
-
-const metricToneClass: Record<
-  MetricTone,
-  {
-    icon: string;
-    value: string;
-    rail: string;
-    bar: string;
-  }
-> = {
-  success: {
-    icon: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-    value: "text-emerald-700",
-    rail: "bg-emerald-50",
-    bar: "bg-emerald-600",
-  },
-  warning: {
-    icon: "bg-amber-50 text-amber-700 ring-amber-100",
-    value: "text-amber-700",
-    rail: "bg-amber-50",
-    bar: "bg-amber-600",
-  },
-  danger: {
-    icon: "bg-red-50 text-red-700 ring-red-100",
-    value: "text-red-700",
-    rail: "bg-red-50",
-    bar: "bg-red-600",
-  },
-  info: {
-    icon: "bg-blue-50 text-blue-700 ring-blue-100",
-    value: "text-blue-700",
-    rail: "bg-blue-50",
-    bar: "bg-blue-600",
-  },
-  neutral: {
-    icon: "bg-slate-100 text-slate-700 ring-slate-200",
-    value: "text-slate-700",
-    rail: "bg-slate-100",
-    bar: "bg-slate-500",
-  },
-};
-
 export default async function FinanceiroPage() {
   const [contas, livroCaixa] = await Promise.all([getContasFinanceiras(), getLivroCaixa()]);
-  const despesas = contas.filter((conta) => conta.tipo === "pagar").reduce((sum, conta) => sum + conta.valor, 0);
-  const receitas = contas.filter((conta) => conta.tipo === "receber").reduce((sum, conta) => sum + conta.valor, 0);
-  const boletos = contas.filter((conta) => conta.codigo_barras && conta.status !== "paga").length;
-  const saldo = livroCaixa.reduce((sum, mov) => sum + mov.valor * (mov.tipo === "entrada" ? 1 : -1), 0);
-  const contasVencidas = contas.filter((conta) => conta.status === "vencida");
-  const contasAbertas = contas.filter((conta) => conta.status === "aberta");
-  const contasAgendadas = contas.filter((conta) => conta.status === "agendada");
-  const totalVencido = contasVencidas.reduce((sum, conta) => sum + conta.valor, 0);
-  const resultadoPrevisto = receitas - despesas;
-  const maiorFluxo = Math.max(despesas, receitas, saldo, 1);
-  const proximasContas = [...contas]
-    .sort((a, b) => new Date(a.data_vencimento).getTime() - new Date(b.data_vencimento).getTime())
-    .slice(0, 4);
 
-  const metrics = [
-    {
-      label: "Despesas abertas",
-      value: formatCurrency(despesas),
-      detail: `${contas.filter((conta) => conta.tipo === "pagar").length} contas a pagar`,
-      icon: TrendingDown,
-      tone: "warning" as const,
-      progress: (despesas / maiorFluxo) * 100,
-    },
-    {
-      label: "Receitas programadas",
-      value: formatCurrency(receitas),
-      detail: `${contas.filter((conta) => conta.tipo === "receber").length} entradas previstas`,
-      icon: TrendingUp,
-      tone: "success" as const,
-      progress: (receitas / maiorFluxo) * 100,
-    },
-    {
-      label: "Boletos em aberto",
-      value: String(boletos),
-      detail: "Com código de barras pendente",
-      icon: Receipt,
-      tone: "info" as const,
-      progress: boletos > 0 ? 62 : 0,
-    },
-    {
-      label: "Saldo do caixa",
-      value: formatCurrency(saldo),
-      detail: "Livro caixa interno",
-      icon: Banknote,
-      tone: "success" as const,
-      progress: (saldo / maiorFluxo) * 100,
-    },
+  const ativas = contas.filter((c) => !c.deleted_at);
+  const despesasTotal = ativas.filter((c) => c.tipo === "pagar" && !["paga", "cancelada"].includes(c.status)).reduce((s, c) => s + c.valor, 0);
+  const receitasTotal = ativas.filter((c) => c.tipo === "receber" && !["recebida", "cancelada"].includes(c.status)).reduce((s, c) => s + c.valor, 0);
+  const vencidas = ativas.filter((c) => c.status === "vencida");
+  const boletos = ativas.filter((c) => c.codigo_barras && c.status !== "paga");
+  const saldo = livroCaixa.reduce((s, m) => s + m.valor * (["entrada", "ajuste"].includes(m.tipo) ? 1 : -1), 0);
+  const totalVencido = vencidas.reduce((s, c) => s + c.valor, 0);
+  const resultado = receitasTotal - despesasTotal;
+
+  const proximas = [...ativas]
+    .filter((c) => ["aberta", "agendada"].includes(c.status))
+    .sort((a, b) => new Date(a.data_vencimento).getTime() - new Date(b.data_vencimento).getTime())
+    .slice(0, 6);
+
+  const porStatus = [
+    { label: "Abertas", count: ativas.filter((c) => c.status === "aberta").length, tone: "info" as const },
+    { label: "Agendadas", count: ativas.filter((c) => c.status === "agendada").length, tone: "neutral" as const },
+    { label: "Vencidas", count: vencidas.length, tone: "danger" as const },
+    { label: "Pagas", count: ativas.filter((c) => c.status === "paga").length, tone: "success" as const },
   ];
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-soft">
-        <div className="grid gap-6 bg-[linear-gradient(135deg,#f8fafc_0%,#ffffff_48%,#eff6ff_100%)] p-5 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="flex min-w-0 gap-4">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-700 ring-1 ring-blue-100">
-              <WalletCards className="h-6 w-6" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Financeiro</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-normal text-slate-950">Financeiro administrativo</h1>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                Contas, boletos, pagamentos e caixa interno com leitura rápida de risco e previsão.
-              </p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <FlowPill label="Vencidas" value={String(contasVencidas.length)} tone="danger" />
-                <FlowPill label="Abertas" value={String(contasAbertas.length)} tone="info" />
-                <FlowPill label="Agendadas" value={String(contasAgendadas.length)} tone="success" />
-              </div>
-            </div>
-          </div>
+      <PageHeader title="Financeiro administrativo" description="Contas, boletos, pagamentos e caixa com leitura rápida de risco e previsão." />
 
-          <div className="rounded-lg bg-slate-950 p-4 text-white shadow-raised">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Saldo operacional</p>
-                <p className="mt-2 text-3xl font-semibold">{formatCurrency(saldo)}</p>
-              </div>
-              <span className="grid h-10 w-10 place-items-center rounded-lg border border-white/10 bg-white/10 text-emerald-200">
-                <CircleDollarSign className="h-5 w-5" />
-              </span>
-            </div>
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <HeroSignal label="Resultado previsto" value={formatCurrency(resultadoPrevisto)} tone={resultadoPrevisto >= 0 ? "success" : "danger"} />
-              <HeroSignal label="Vencido" value={formatCurrency(totalVencido)} tone={totalVencido > 0 ? "danger" : "success"} />
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* KPI principal */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KPICard
+          label="Saldo do caixa"
+          value={formatCurrency(saldo)}
+          sub="Livro caixa interno"
+          icon={Banknote}
+          tone={saldo >= 0 ? "success" : "danger"}
+        />
+        <KPICard
+          label="Despesas em aberto"
+          value={formatCurrency(despesasTotal)}
+          sub={`${ativas.filter((c) => c.tipo === "pagar" && !["paga", "cancelada"].includes(c.status)).length} contas a pagar`}
+          icon={TrendingDown}
+          tone="warning"
+        />
+        <KPICard
+          label="Receitas previstas"
+          value={formatCurrency(receitasTotal)}
+          sub={`${ativas.filter((c) => c.tipo === "receber" && !["recebida", "cancelada"].includes(c.status)).length} entradas`}
+          icon={TrendingUp}
+          tone="success"
+        />
+        <KPICard
+          label="Resultado previsto"
+          value={formatCurrency(resultado)}
+          sub={resultado >= 0 ? "Resultado positivo" : "Deficit previsto"}
+          icon={resultado >= 0 ? CheckCircle2 : CircleAlert}
+          tone={resultado >= 0 ? "success" : "danger"}
+        />
+      </div>
 
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((metric) => (
-          <FinanceMetric key={metric.label} {...metric} />
+      {/* Status e boletos */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {porStatus.map((s) => (
+          <StatusPill key={s.label} label={s.label} count={s.count} tone={s.tone} />
         ))}
-      </section>
+      </div>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
-        <section className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-soft">
-          <div className="flex items-start justify-between gap-4 border-b border-slate-200/80 bg-[linear-gradient(90deg,#f8fafc_0%,#ffffff_100%)] px-5 py-4">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Últimas contas</p>
-              <h2 className="mt-1 text-lg font-semibold text-slate-950">Registros financeiros</h2>
-            </div>
-            <CreditCard className="mt-1 h-5 w-5 text-slate-400" />
-          </div>
-          <div className="p-4">
-            <DataTable
-              data={contas as unknown as Record<string, unknown>[]}
-              columns={[
-                { key: "descricao", label: "Descrição" },
-                { key: "tipo", label: "Tipo" },
-                { key: "valor", label: "Valor", format: "currency" },
-                { key: "data_vencimento", label: "Vencimento", format: "date" },
-                { key: "status", label: "Status", format: "status" },
-              ]}
-            />
-          </div>
-        </section>
-
-        <aside className="space-y-6">
-          <section className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-soft">
-            <SideHeader icon={CalendarClock} eyebrow="Agenda financeira" title="Próximos vencimentos" />
-            <div className="space-y-2 p-3">
-              {proximasContas.map((conta) => (
-                <div key={conta.id} className="rounded-lg border border-slate-100 bg-white px-3 py-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-slate-950">{conta.descricao}</p>
-                      <p className="mt-1 text-xs text-slate-500">{formatDate(conta.data_vencimento)}</p>
-                    </div>
-                    <p className="shrink-0 text-sm font-semibold text-slate-950">{formatCurrency(conta.valor)}</p>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <span className="text-xs font-medium text-slate-500">{conta.tipo}</span>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+        {/* Próximos vencimentos */}
+        <section className="rounded-xl border border-slate-200 bg-white">
+          <SectionHeader icon={CalendarClock} eyebrow="Agenda financeira" title="Próximos vencimentos" />
+          <div className="divide-y divide-slate-100">
+            {proximas.length ? proximas.map((conta) => (
+              <div key={conta.id} className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-slate-50/60">
+                <div className={cn(
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+                  conta.tipo === "receber" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600",
+                )}>
+                  {conta.tipo === "receber"
+                    ? <TrendingUp className="h-3.5 w-3.5" />
+                    : <TrendingDown className="h-3.5 w-3.5" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-slate-900">{conta.descricao}</p>
+                  <p className="text-xs text-slate-400">{formatDate(conta.data_vencimento)}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-sm font-semibold text-slate-900">{formatCurrency(conta.valor)}</p>
+                  <div className="mt-1 flex justify-end">
                     <StatusBadge status={conta.status} />
                   </div>
                 </div>
-              ))}
+              </div>
+            )) : (
+              <p className="px-5 py-8 text-center text-sm text-slate-400">Nenhuma conta pendente.</p>
+            )}
+          </div>
+        </section>
+
+        {/* Painel lateral */}
+        <div className="space-y-4">
+          {/* Saldo operacional */}
+          <section className="rounded-xl border border-slate-200 bg-slate-950 p-5 text-white">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Saldo operacional</p>
+            <p className={cn("mt-3 text-4xl font-bold tracking-tight", saldo >= 0 ? "text-emerald-300" : "text-red-300")}>
+              {formatCurrency(saldo)}
+            </p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="rounded-lg bg-white/[0.06] px-3 py-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Resultado previsto</p>
+                <p className={cn("mt-1 text-sm font-bold", resultado >= 0 ? "text-emerald-300" : "text-red-300")}>
+                  {formatCurrency(resultado)}
+                </p>
+              </div>
+              <div className="rounded-lg bg-white/[0.06] px-3 py-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Total vencido</p>
+                <p className={cn("mt-1 text-sm font-bold", totalVencido > 0 ? "text-red-300" : "text-emerald-300")}>
+                  {formatCurrency(totalVencido)}
+                </p>
+              </div>
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-soft">
-            <SideHeader icon={AlertTriangle} eyebrow="Atenção" title="Risco financeiro" />
-            <div className="space-y-2 p-3">
-              <RiskRow label="Contas vencidas" value={String(contasVencidas.length)} tone="danger" />
-              <RiskRow label="Valor vencido" value={formatCurrency(totalVencido)} tone={totalVencido > 0 ? "danger" : "success"} />
-              <RiskRow label="Boletos pendentes" value={String(boletos)} tone={boletos > 0 ? "warning" : "success"} />
+          {/* Alerta de risco */}
+          <section className="rounded-xl border border-slate-200 bg-white">
+            <SectionHeader icon={AlertTriangle} eyebrow="Alertas" title="Situação financeira" />
+            <div className="space-y-1.5 p-3">
+              <RiskRow
+                label="Contas vencidas"
+                value={String(vencidas.length)}
+                tone={vencidas.length > 0 ? "danger" : "success"}
+              />
+              <RiskRow
+                label="Valor em atraso"
+                value={formatCurrency(totalVencido)}
+                tone={totalVencido > 0 ? "danger" : "success"}
+              />
+              <RiskRow
+                label="Boletos pendentes"
+                value={String(boletos.length)}
+                tone={boletos.length > 0 ? "warning" : "success"}
+                icon={Receipt}
+              />
             </div>
           </section>
-        </aside>
-      </section>
-    </div>
-  );
-}
-
-function FlowPill({ label, value, tone }: { label: string; value: string; tone: MetricTone }) {
-  return (
-    <div className="rounded-lg border border-slate-200/80 bg-white/80 px-3 py-2">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
-      <p className={cn("mt-1 text-lg font-semibold", metricToneClass[tone].value)}>{value}</p>
-    </div>
-  );
-}
-
-function HeroSignal({ label, value, tone }: { label: string; value: string; tone: MetricTone }) {
-  return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">{label}</p>
-      <p className={cn("mt-1 truncate text-sm font-semibold", tone === "danger" ? "text-red-200" : "text-emerald-200")}>{value}</p>
-    </div>
-  );
-}
-
-function FinanceMetric({
-  label,
-  value,
-  detail,
-  icon: Icon,
-  tone,
-  progress,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-  icon: LucideIcon;
-  tone: MetricTone;
-  progress: number;
-}) {
-  const toneClass = metricToneClass[tone];
-
-  return (
-    <section className="rounded-lg border border-slate-200/80 bg-white p-4 shadow-soft">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="truncate text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500">{label}</p>
-          <p className={cn("mt-2 text-2xl font-semibold leading-none", toneClass.value)}>{value}</p>
         </div>
-        <span className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-lg ring-1", toneClass.icon)}>
-          <Icon className="h-5 w-5" />
-        </span>
       </div>
-      <p className="mt-3 text-sm text-slate-500">{detail}</p>
-      <div className={cn("mt-4 h-2 overflow-hidden rounded-full", toneClass.rail)}>
-        <span className={cn("block h-full rounded-full", toneClass.bar)} style={{ width: `${Math.min(Math.max(progress, 4), 100)}%` }} />
-      </div>
-    </section>
-  );
-}
-
-function SideHeader({ icon: Icon, eyebrow, title }: { icon: LucideIcon; eyebrow: string; title: string }) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-slate-200/80 bg-[linear-gradient(90deg,#f8fafc_0%,#ffffff_100%)] px-4 py-3">
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{eyebrow}</p>
-        <h2 className="mt-1 text-base font-semibold text-slate-950">{title}</h2>
-      </div>
-      <Icon className="mt-1 h-4 w-4 text-slate-400" />
     </div>
   );
 }
 
-function RiskRow({ label, value, tone }: { label: string; value: string; tone: MetricTone }) {
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+type Tone = "success" | "warning" | "danger" | "info" | "neutral";
+
+const toneConfig: Record<Tone, { text: string; bg: string; border: string; dot: string }> = {
+  success: { text: "text-emerald-700", bg: "bg-emerald-50", border: "border-l-emerald-500", dot: "bg-emerald-500" },
+  warning: { text: "text-amber-700",   bg: "bg-amber-50",   border: "border-l-amber-500",   dot: "bg-amber-500" },
+  danger:  { text: "text-red-700",     bg: "bg-red-50",     border: "border-l-red-500",     dot: "bg-red-500" },
+  info:    { text: "text-blue-700",    bg: "bg-blue-50",    border: "border-l-blue-500",    dot: "bg-blue-500" },
+  neutral: { text: "text-slate-600",   bg: "bg-slate-50",   border: "border-l-slate-300",   dot: "bg-slate-400" },
+};
+
+function KPICard({ label, value, sub, icon: Icon, tone = "neutral" }: {
+  label: string; value: string; sub?: string; icon: LucideIcon; tone?: Tone;
+}) {
+  const t = toneConfig[tone];
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-white px-3 py-2.5">
-      <span className="text-sm text-slate-600">{label}</span>
-      <span className={cn("text-sm font-semibold", metricToneClass[tone].value)}>{value}</span>
+    <div className={cn("rounded-xl border border-slate-200 border-l-4 bg-white px-5 py-4", t.border)}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">{label}</p>
+        <Icon className={cn("h-4 w-4 shrink-0", t.text)} aria-hidden="true" />
+      </div>
+      <p className={cn("mt-3 text-2xl font-bold leading-none tracking-tight", t.text)}>{value}</p>
+      {sub && <p className="mt-2 text-xs text-slate-400">{sub}</p>}
+    </div>
+  );
+}
+
+function StatusPill({ label, count, tone }: { label: string; count: number; tone: Tone }) {
+  const t = toneConfig[tone];
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+      <span className={cn("h-2 w-2 shrink-0 rounded-full", t.dot)} />
+      <span className="min-w-0 flex-1 text-sm text-slate-600">{label}</span>
+      <span className={cn("text-lg font-bold tabular-nums", t.text)}>{count}</span>
+    </div>
+  );
+}
+
+function SectionHeader({ icon: Icon, eyebrow, title }: { icon: LucideIcon; eyebrow: string; title: string }) {
+  return (
+    <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{eyebrow}</p>
+        <h2 className="mt-0.5 text-base font-semibold text-slate-900">{title}</h2>
+      </div>
+      <Icon className="h-4 w-4 text-slate-300" aria-hidden="true" />
+    </div>
+  );
+}
+
+function RiskRow({ label, value, tone, icon: Icon }: { label: string; value: string; tone: Tone; icon?: LucideIcon }) {
+  const t = toneConfig[tone];
+  return (
+    <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-slate-50">
+      {Icon
+        ? <Icon className={cn("h-4 w-4 shrink-0", t.text)} aria-hidden="true" />
+        : <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", t.dot)} />}
+      <span className="flex-1 text-sm text-slate-600">{label}</span>
+      <span className={cn("text-sm font-bold tabular-nums", t.text)}>{value}</span>
     </div>
   );
 }
