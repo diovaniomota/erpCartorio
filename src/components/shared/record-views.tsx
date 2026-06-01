@@ -1,13 +1,16 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
   ExternalLink,
 } from "lucide-react";
+import { ExportButton } from "@/components/shared/export-button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DeleteButton } from "@/components/shared/delete-button";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { SEM_CATEGORIA } from "@/lib/constants";
 import type {
   ActionResult,
   Contrato,
@@ -30,6 +33,15 @@ export function SupplierDirectory({
 }) {
   const ativos = fornecedores.filter((fornecedor) => fornecedor.status === "ativo").length;
   const categorias = Array.from(new Set(fornecedores.map((fornecedor) => fornecedor.categoria).filter(Boolean))).length;
+  const exportCols = [
+    { key: "nome", label: "Fornecedor" },
+    { key: "categoria", label: "Categoria" },
+    { key: "documento", label: "Documento" },
+    { key: "contato_responsavel", label: "Contato" },
+    { key: "telefone", label: "Telefone" },
+    { key: "email", label: "E-mail" },
+    { key: "status", label: "Status" },
+  ];
 
   return (
     <section className="space-y-3">
@@ -38,7 +50,7 @@ export function SupplierDirectory({
           <h2 className="text-base font-semibold text-slate-950">Lista de fornecedores</h2>
           <p className="text-sm text-slate-500">Contatos e responsáveis em linhas para leitura rápida.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
           <span className="inline-flex items-baseline gap-1">
             <span className="font-semibold text-slate-950">{ativos}</span> ativos
           </span>
@@ -48,10 +60,11 @@ export function SupplierDirectory({
           <span className="inline-flex items-baseline gap-1">
             <span className="font-semibold text-slate-950">{fornecedores.length}</span> registros
           </span>
+          <ExportButton data={fornecedores as unknown as Record<string, unknown>[]} columns={exportCols} filename="fornecedores" title="Fornecedores" />
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
         <Table>
           <TableHeader className="bg-slate-50">
             <TableRow className="hover:bg-transparent">
@@ -122,6 +135,16 @@ export function ContractPipeline({
   const vigentes = contratos.filter((contrato) => ["vigente", "renovado"].includes(contrato.status)).length;
   const atencao = contratos.filter((contrato) => ["a vencer", "suspenso"].includes(contrato.status)).length;
   const encerrados = contratos.filter((contrato) => ["vencido", "cancelado"].includes(contrato.status)).length;
+  const exportColsContratos = [
+    { key: "nome", label: "Contrato" },
+    { key: "fornecedor_nome", label: "Fornecedor" },
+    { key: "numero", label: "Número" },
+    { key: "valor", label: "Valor mensal", format: "currency" as const },
+    { key: "data_inicio", label: "Início", format: "date" as const },
+    { key: "data_vencimento", label: "Vencimento", format: "date" as const },
+    { key: "indice_reajuste", label: "Reajuste" },
+    { key: "status", label: "Status" },
+  ];
 
   return (
     <section className="space-y-3">
@@ -134,8 +157,9 @@ export function ContractPipeline({
           { label: "encerrados", value: String(encerrados) },
           { label: "registros", value: String(contratos.length) },
         ]}
+        actions={<ExportButton data={contratos as unknown as Record<string, unknown>[]} columns={exportColsContratos} filename="contratos" title="Contratos" />}
       />
-      <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
         <Table>
           <TableHeader className="bg-slate-50">
             <TableRow className="hover:bg-transparent">
@@ -185,6 +209,15 @@ export function FinancialLedger({
   const totalPagar = contas.filter((conta) => conta.tipo === "pagar").reduce((sum, conta) => sum + Number(conta.valor ?? 0), 0);
   const totalReceber = contas.filter((conta) => conta.tipo === "receber").reduce((sum, conta) => sum + Number(conta.valor ?? 0), 0);
   const vencidas = contas.filter((conta) => conta.status === "vencida").length;
+  const exportColsContas = [
+    { key: "descricao", label: "Conta" },
+    { key: "tipo", label: "Tipo" },
+    { key: "categoria_nome", label: "Categoria" },
+    { key: "fornecedor_nome", label: "Fornecedor" },
+    { key: "data_vencimento", label: "Vencimento", format: "date" as const },
+    { key: "valor", label: "Valor", format: "currency" as const },
+    { key: "status", label: "Status" },
+  ];
 
   return (
     <section className="space-y-3">
@@ -197,8 +230,9 @@ export function FinancialLedger({
           { label: "vencidas", value: String(vencidas) },
           { label: "registros", value: String(contas.length) },
         ]}
+        actions={<ExportButton data={contas as unknown as Record<string, unknown>[]} columns={exportColsContas} filename="contas-financeiras" title="Contas financeiras" />}
       />
-      <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
         <Table>
           <TableHeader className="bg-slate-50">
             <TableRow className="hover:bg-transparent">
@@ -223,7 +257,7 @@ export function FinancialLedger({
                   </div>
                 </TableCell>
                 <TableCell><Badge variant={conta.tipo === "receber" ? "info" : "secondary"}>{conta.tipo}</Badge></TableCell>
-                <TableCell className="text-slate-700">{conta.categoria_nome ?? conta.centro_custo ?? "-"}</TableCell>
+                <TableCell className="text-slate-700">{conta.categoria_nome ?? conta.centro_custo ?? SEM_CATEGORIA}</TableCell>
                 <TableCell className="text-slate-700">{conta.fornecedor_nome ?? "-"}</TableCell>
                 <TableCell className="whitespace-nowrap text-slate-700">{formatDate(conta.data_vencimento)}</TableCell>
                 <TableCell className="whitespace-nowrap font-medium text-slate-950">{formatCurrency(Number(conta.valor ?? 0))}</TableCell>
@@ -247,6 +281,17 @@ export function StaffDirectory({
 }) {
   const ativos = funcionarios.filter((funcionario) => funcionario.status === "ativo").length;
   const ausentes = funcionarios.filter((funcionario) => ["afastado", "férias", "licença"].includes(funcionario.status)).length;
+  // CPF completo e salário são omitidos da exportação (P1.2 — conformidade de dados)
+  const exportColsFuncionarios = [
+    { key: "nome", label: "Funcionário" },
+    { key: "cargo", label: "Cargo" },
+    { key: "setor", label: "Setor" },
+    { key: "email", label: "E-mail" },
+    { key: "telefone", label: "Telefone" },
+    { key: "data_admissao", label: "Admissão", format: "date" as const },
+    { key: "tipo_contrato", label: "Contrato" },
+    { key: "status", label: "Status" },
+  ];
 
   return (
     <section className="space-y-3">
@@ -258,8 +303,9 @@ export function StaffDirectory({
           { label: "ausentes", value: String(ausentes) },
           { label: "registros", value: String(funcionarios.length) },
         ]}
+        actions={<ExportButton data={funcionarios as unknown as Record<string, unknown>[]} columns={exportColsFuncionarios} filename="funcionarios" title="Funcionários" />}
       />
-      <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
         <Table>
           <TableHeader className="bg-slate-50">
             <TableRow className="hover:bg-transparent">
@@ -269,7 +315,7 @@ export function StaffDirectory({
               <TableHead className="min-w-56">E-mail</TableHead>
               <TableHead>Telefone</TableHead>
               <TableHead>Admissão</TableHead>
-              <TableHead>Salário</TableHead>
+              <TableHead>Contrato</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-16 text-right">Ações</TableHead>
             </TableRow>
@@ -281,14 +327,18 @@ export function StaffDirectory({
                   <Link href={`/rh/funcionarios/${funcionario.id}`} prefetch={false} className="font-semibold text-slate-950 underline-offset-4 hover:text-rose-700 hover:underline">
                     {funcionario.nome}
                   </Link>
-                  <p className="mt-1 text-xs text-slate-500">{funcionario.cpf ?? "CPF não informado"}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {funcionario.cpf
+                      ? `•••.•••.•••-${funcionario.cpf.replace(/\D/g, "").slice(-2)}`
+                      : "—"}
+                  </p>
                 </TableCell>
                 <TableCell className="text-slate-700">{funcionario.cargo}</TableCell>
                 <TableCell className="text-slate-700">{funcionario.setor}</TableCell>
                 <TableCell className="text-slate-700">{funcionario.email ?? "-"}</TableCell>
                 <TableCell className="whitespace-nowrap text-slate-700">{funcionario.telefone ?? "-"}</TableCell>
                 <TableCell className="whitespace-nowrap text-slate-700">{formatDate(funcionario.data_admissao)}</TableCell>
-                <TableCell className="whitespace-nowrap font-medium text-slate-950">{formatCurrency(Number(funcionario.salario ?? 0))}</TableCell>
+                <TableCell className="whitespace-nowrap text-slate-700">{funcionario.tipo_contrato ?? "-"}</TableCell>
                 <TableCell><StatusBadge status={funcionario.status} /></TableCell>
                 <TableCell className="text-right"><DeleteButton id={funcionario.id} action={deleteAction} /></TableCell>
               </TableRow>
@@ -321,7 +371,7 @@ export function DocumentLibrary({
           { label: "registros", value: String(docs.length) },
         ]}
       />
-      <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
         <Table>
           <TableHeader className="bg-slate-50">
             <TableRow className="hover:bg-transparent">
@@ -368,6 +418,17 @@ export function AssetGrid({
 }) {
   const emManutencao = itens.filter((item) => item.status === "em manutenção").length;
   const patrimonio = itens.reduce((sum, item) => sum + Number(item.valor_compra ?? 0), 0);
+  const exportColsInventario = [
+    { key: "codigo_patrimonio", label: "Patrimônio" },
+    { key: "nome", label: "Item" },
+    { key: "categoria", label: "Categoria" },
+    { key: "localizacao", label: "Localização" },
+    { key: "valor_compra", label: "Valor", format: "currency" as const },
+    { key: "data_compra", label: "Compra", format: "date" as const },
+    { key: "garantia_ate", label: "Garantia", format: "date" as const },
+    { key: "numero_serie", label: "Série" },
+    { key: "status", label: "Status" },
+  ];
 
   return (
     <section className="space-y-3">
@@ -379,8 +440,9 @@ export function AssetGrid({
           { label: "em manutenção", value: String(emManutencao) },
           { label: "patrimônio", value: formatCurrency(patrimonio) },
         ]}
+        actions={<ExportButton data={itens as unknown as Record<string, unknown>[]} columns={exportColsInventario} filename="inventario" title="Inventário de patrimônio" />}
       />
-      <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
         <Table>
           <TableHeader className="bg-slate-50">
             <TableRow className="hover:bg-transparent">
@@ -446,7 +508,7 @@ export function OfficialFeed({
           { label: "em análise", value: String(emAnalise) },
         ]}
       />
-      <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
         <Table>
           <TableHeader className="bg-slate-50">
             <TableRow className="hover:bg-transparent">
@@ -495,10 +557,12 @@ function ListSummary({
   title,
   description,
   metrics,
+  actions,
 }: {
   title: string;
   description: string;
   metrics: Array<{ label: string; value: string }>;
+  actions?: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-3 border-b border-slate-200 pb-3 md:flex-row md:items-end md:justify-between">
@@ -506,12 +570,13 @@ function ListSummary({
         <h2 className="text-base font-semibold text-slate-950">{title}</h2>
         <p className="mt-1 text-sm text-slate-500">{description}</p>
       </div>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
         {metrics.map((metric) => (
           <span key={metric.label} className="inline-flex items-baseline gap-1">
             <span className="font-semibold text-slate-950">{metric.value}</span> {metric.label}
           </span>
         ))}
+        {actions}
       </div>
     </div>
   );

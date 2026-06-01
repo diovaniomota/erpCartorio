@@ -64,6 +64,9 @@ export default async function RelatoriosPage() {
               { key: "indicador", label: "Indicador" },
               { key: "valor", label: "Total" },
             ]}
+            exportable
+            exportFilename="relatorios-administrativos"
+            exportTitle="Relatórios administrativos"
           />
         </CardContent>
       </Card>

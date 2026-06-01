@@ -68,8 +68,8 @@ export default async function DashboardPage() {
   const vencidas = statByTitle.get("Contas vencidas");
   const boletos = statByTitle.get("Boletos em aberto");
   const caixa = statByTitle.get("Saldo do caixa");
-  const despesas = statByTitle.get("Despesas do mês");
-  const receitas = statByTitle.get("Receitas do mês");
+  const despesas = statByTitle.get("Despesas em aberto");
+  const receitas = statByTitle.get("Receitas em aberto");
   const contratos = statByTitle.get("Contratos vencendo");
   const ativos = statByTitle.get("Funcionários ativos");
   const ausentes = statByTitle.get("Funcionários ausentes");
@@ -81,7 +81,7 @@ export default async function DashboardPage() {
   const kpis = [
     { label: "Caixa interno", value: formatStat(caixa), icon: Banknote, tone: "success" as const },
     { label: "Receitas do mês", value: formatStat(receitas), icon: TrendingUp, tone: "success" as const },
-    { label: "Despesas do mês", value: formatStat(despesas), icon: TrendingDown, tone: "neutral" as const },
+    { label: "Despesas em aberto", value: formatStat(despesas), icon: TrendingDown, tone: "neutral" as const },
     { label: "Boletos abertos", value: formatStat(boletos), icon: Receipt, tone: "info" as const },
     { label: "Contas vencidas", value: formatStat(vencidas), icon: FileWarning, tone: "danger" as const },
     { label: "Tarefas atrasadas", value: formatStat(atrasadas), icon: ClipboardList, tone: "warning" as const },

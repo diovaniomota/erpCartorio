@@ -6,8 +6,11 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { getAgendaEvento } from "@/modules/agenda/queries";
 import { formatDate } from "@/lib/utils";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function AgendaEventoDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  if (!UUID_REGEX.test(id)) notFound();
   const event = await getAgendaEvento(id);
   if (!event) notFound();
 

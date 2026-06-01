@@ -31,8 +31,8 @@ export function NotificationsMenu({ notifications }: NotificationsMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className="relative" title="Notificações">
-          <Bell className="h-4 w-4" />
+        <Button variant="outline" size="icon" className="relative" title="Notificações" aria-label="Notificações">
+          <Bell className="h-4 w-4" aria-hidden="true" />
           {unread ? (
             <span className="absolute -right-1 -top-1 h-4 min-w-4 rounded-full bg-red-600 px-1 text-[10px] text-white">
               {unread}

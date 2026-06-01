@@ -1,3 +1,5 @@
+export const SEM_CATEGORIA = "Sem categoria";
+
 export const PERMISSIONS = [
   "ver_dashboard",
   "gerenciar_central_oficial",

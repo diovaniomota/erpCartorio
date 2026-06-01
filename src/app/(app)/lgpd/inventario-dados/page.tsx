@@ -30,6 +30,7 @@ export default async function LgpdInventarioDadosPage() {
   return (
     <>
       <PageHeader
+        tone="lgpd"
         title="Inventário de dados LGPD"
         description="Mapeamento de processos, categorias de dados, bases legais, finalidade, retenção e compartilhamentos."
         actions={<EntityFormDialog title="Novo item de inventário" fields={fields} action={createLgpdInventarioDado} />}

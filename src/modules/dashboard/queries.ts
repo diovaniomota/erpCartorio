@@ -1,4 +1,5 @@
 import { addDays, isBefore, isSameDay, parseISO, startOfMonth } from "date-fns";
+import { SEM_CATEGORIA } from "@/lib/constants";
 import { getAgendaEventos } from "@/modules/agenda/queries";
 import { getContratos } from "@/modules/contratos/queries";
 import { getContasFinanceiras, getLivroCaixa } from "@/modules/financeiro/queries";
@@ -49,11 +50,14 @@ export async function getDashboardData() {
     ["aberta", "agendada", "vencida"].includes(conta.status),
   );
   const boletosAbertos = contas.filter((conta) => conta.codigo_barras && conta.status !== "paga");
+  // "Em aberto" = all non-paid/non-cancelled bills, regardless of month.
+  // Previously filtered by monthStart which returned R$0 when no bills existed
+  // for the current month, diverging from the Financeiro total.
   const despesasMes = contas
-    .filter((conta) => conta.tipo === "pagar" && parseISO(conta.data_vencimento) >= monthStart)
+    .filter((conta) => conta.tipo === "pagar" && !["paga", "cancelada"].includes(conta.status))
     .reduce((sum, conta) => sum + conta.valor, 0);
   const receitasMes = contas
-    .filter((conta) => conta.tipo === "receber" && parseISO(conta.data_vencimento) >= monthStart)
+    .filter((conta) => conta.tipo === "receber" && !["recebida", "cancelada"].includes(conta.status))
     .reduce((sum, conta) => sum + conta.valor, 0);
   const saldoCaixa = livroCaixa.reduce((sum, movimento) => {
     const sign = ["entrada", "ajuste"].includes(movimento.tipo) ? 1 : -1;
@@ -76,8 +80,8 @@ export async function getDashboardData() {
     { title: "Contas vencidas", value: contasVencidas.length, tone: "danger" as const },
     { title: "Boletos em aberto", value: boletosAbertos.length, tone: "info" as const },
     { title: "Saldo do caixa", value: saldoCaixa, format: "currency" as const, tone: "success" as const },
-    { title: "Despesas do mês", value: despesasMes, format: "currency" as const, tone: "neutral" as const },
-    { title: "Receitas do mês", value: receitasMes, format: "currency" as const, tone: "success" as const },
+    { title: "Despesas em aberto", value: despesasMes, format: "currency" as const, tone: "neutral" as const },
+    { title: "Receitas em aberto", value: receitasMes, format: "currency" as const, tone: "success" as const },
     { title: "Contratos vencendo", value: contratosVencendo.length, tone: "warning" as const },
     { title: "Funcionários ativos", value: funcionariosAtivos.length, tone: "success" as const },
     { title: "Funcionários ausentes", value: funcionariosAusentes.length, tone: "warning" as const },
@@ -102,7 +106,7 @@ export async function getDashboardData() {
     contas
       .filter((conta) => conta.tipo === "pagar")
       .reduce<Record<string, number>>((acc, conta) => {
-        const categoria = conta.categoria_nome ?? "outros";
+        const categoria = conta.categoria_nome ?? SEM_CATEGORIA;
         acc[categoria] = (acc[categoria] ?? 0) + conta.valor;
         return acc;
       }, {}),

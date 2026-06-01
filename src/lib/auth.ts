@@ -11,74 +11,53 @@ export type SessionContext = {
   permissions: string[];
 };
 
-export const getCurrentUserProfile = cache(async function getCurrentUserProfile(): Promise<UserProfile> {
+// Single-client, 2 round trips: getUser → (profiles+cartorios join || permissions)
+export const getSessionContext = cache(async function getSessionContext(): Promise<SessionContext> {
   const supabase = await createSupabaseServerClient();
+
   const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
-  if (!user) {
-    redirect("/login");
-  }
+  const [profileResult, permissionsResult] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("*, cartorios(*)")
+      .or(`id.eq.${user.id},auth_user_id.eq.${user.id}`)
+      .maybeSingle(),
+    supabase.rpc("user_permission_keys"),
+  ]);
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .or(`id.eq.${user.id},auth_user_id.eq.${user.id}`)
-    .maybeSingle();
+  if (profileResult.error || !profileResult.data) redirect("/login");
 
-  if (error || !data) {
-    redirect("/login");
-  }
+  const { cartorios, ...profileData } = profileResult.data as UserProfile & { cartorios: Cartorio };
 
-  return data as UserProfile;
+  if (!cartorios) throw new Error("Cartório não encontrado.");
+
+  return {
+    cartorioId: profileData.cartorio_id,
+    userId: profileData.id,
+    profile: profileData,
+    cartorio: cartorios,
+    permissions: Array.isArray(permissionsResult.data) ? permissionsResult.data : [],
+  };
+});
+
+export const getCurrentUserProfile = cache(async function getCurrentUserProfile(): Promise<UserProfile> {
+  return (await getSessionContext()).profile;
 });
 
 export const getCurrentCartorio = cache(async function getCurrentCartorio(): Promise<Cartorio> {
-  const profile = await getCurrentUserProfile();
-
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("cartorios")
-    .select("*")
-    .eq("id", profile.cartorio_id)
-    .maybeSingle();
-
-  if (error || !data) {
-    throw new Error("Cartório não encontrado para o usuário atual.");
-  }
-
-  return data as Cartorio;
+  return (await getSessionContext()).cartorio;
 });
 
 export const getCurrentPermissions = cache(async function getCurrentPermissions(): Promise<string[]> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc("user_permission_keys");
-
-  if (error || !Array.isArray(data)) {
-    return [];
-  }
-
-  return data as string[];
-});
-
-export const getSessionContext = cache(async function getSessionContext(): Promise<SessionContext> {
-  const profile = await getCurrentUserProfile();
-  const [cartorio, permissions] = await Promise.all([getCurrentCartorio(), getCurrentPermissions()]);
-
-  return {
-    cartorioId: profile.cartorio_id,
-    userId: profile.id,
-    profile,
-    cartorio,
-    permissions,
-  };
+  return (await getSessionContext()).permissions;
 });
 
 export async function requirePermission(permission: string) {
   const context = await getSessionContext();
-
   if (!context.permissions.includes(permission)) {
     throw new Error(`Permissão necessária: ${permission}`);
   }
-
   return context;
 }

@@ -1,4 +1,5 @@
 import { BarChart3, Landmark, ReceiptText, TrendingDown, TrendingUp } from "lucide-react";
+import { SEM_CATEGORIA } from "@/lib/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/shared/data-table";
 import { PageHeader } from "@/components/shared/page-header";
@@ -15,7 +16,7 @@ export default async function FinanceiroRelatoriosPage() {
 
   const porCategoria = Object.entries(
     despesas.reduce<Record<string, number>>((acc, conta) => {
-      const categoria = conta.categoria_nome ?? "sem categoria";
+      const categoria = conta.categoria_nome ?? SEM_CATEGORIA;
       acc[categoria] = (acc[categoria] ?? 0) + conta.valor;
       return acc;
     }, {}),
@@ -54,6 +55,9 @@ export default async function FinanceiroRelatoriosPage() {
                 { key: "categoria", label: "Categoria" },
                 { key: "valor", label: "Valor", format: "currency" },
               ]}
+              exportable
+              exportFilename="despesas-por-categoria"
+              exportTitle="Despesas por categoria"
             />
           </CardContent>
         </Card>
@@ -68,6 +72,9 @@ export default async function FinanceiroRelatoriosPage() {
                 { key: "fornecedor", label: "Fornecedor" },
                 { key: "valor", label: "Valor", format: "currency" },
               ]}
+              exportable
+              exportFilename="despesas-por-fornecedor"
+              exportTitle="Despesas por fornecedor"
             />
           </CardContent>
         </Card>
@@ -86,6 +93,9 @@ export default async function FinanceiroRelatoriosPage() {
               { key: "forma_pagamento", label: "Pagamento" },
               { key: "valor", label: "Valor", format: "currency" },
             ]}
+            exportable
+            exportFilename="fluxo-de-caixa"
+            exportTitle="Fluxo de caixa"
           />
         </CardContent>
       </Card>

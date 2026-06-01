@@ -27,6 +27,8 @@ export function CalendarView({ events }: { events: AgendaEvento[] }) {
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
+        initialDate={new Date()}
+        now={new Date()}
         locale={ptBrLocale}
         headerToolbar={{
           left: "prev,next today",

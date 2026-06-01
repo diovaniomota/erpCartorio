@@ -6,7 +6,7 @@ export default async function UsuariosPage() {
   const profiles = await listScopedRecords("profiles", { orderBy: "nome", ascending: true });
   return (
     <>
-      <PageHeader title="Usuários" description="Usuários do cartório, vinculados ao Supabase Auth e isolados por cartorio_id." />
+      <PageHeader title="Usuários" description="Equipe com acesso ao sistema. Cada usuário é vinculado a um perfil de permissões." />
       <DataTable data={profiles as unknown as Record<string, unknown>[]} columns={[
         { key: "nome", label: "Nome" },
         { key: "email", label: "E-mail" },

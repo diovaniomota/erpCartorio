@@ -28,6 +28,7 @@ export default async function LgpdFornecedoresOperadoresPage() {
   return (
     <>
       <PageHeader
+        tone="lgpd"
         title="Fornecedores operadores"
         description="Fornecedores que tratam dados pessoais, descrição do tratamento, dados tratados e contrato de operador."
         actions={<EntityFormDialog title="Novo operador" fields={fields} action={createLgpdFornecedorOperador} />}

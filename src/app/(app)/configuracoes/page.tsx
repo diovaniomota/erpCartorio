@@ -50,7 +50,16 @@ export default async function ConfiguracoesPage() {
         <DataTable
           data={configuracoes.map((item) => ({
             ...item,
-            valor_texto: JSON.stringify(item.valor),
+            valor_texto: (() => {
+              if (item.valor === null || item.valor === undefined) return "—";
+              if (typeof item.valor === "boolean") return item.valor ? "Sim" : "Não";
+              if (typeof item.valor === "string" || typeof item.valor === "number") return String(item.valor);
+              const obj = item.valor as Record<string, unknown>;
+              return Object.entries(obj).map(([k, v]) => {
+                const label = typeof v === "boolean" ? (v ? "Sim" : "Não") : String(v ?? "—");
+                return `${k}: ${label}`;
+              }).join(" · ");
+            })(),
           })) as unknown as Record<string, unknown>[]}
           columns={[
             { key: "chave", label: "Chave" },

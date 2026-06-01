@@ -14,11 +14,18 @@ export function formatCurrency(value?: number | null) {
 
 export function formatDate(value?: string | Date | null) {
   if (!value) return "-";
+  // Date-only strings (YYYY-MM-DD) are treated as UTC midnight by `new Date()`,
+  // which shifts the displayed day in UTC-negative timezones (e.g. Brazil UTC-3).
+  // Parsing as local midnight fixes the off-by-one-day bug.
+  const date =
+    typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+      ? new Date(`${value}T00:00:00`)
+      : new Date(value);
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  }).format(new Date(value));
+  }).format(date);
 }
 
 export function toISODate(date: Date) {
