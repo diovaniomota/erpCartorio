@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuditTimeline } from "@/components/shared/audit-timeline";
 import { DataTable } from "@/components/shared/data-table";
 import { PageHeader } from "@/components/shared/page-header";
+import { requirePermission } from "@/lib/auth";
 import { listScopedRecords } from "@/lib/data";
 
 const TABLE_LABELS: Record<string, string> = {
@@ -22,6 +23,7 @@ const TABLE_LABELS: Record<string, string> = {
 };
 
 export default async function AuditoriaPage() {
+  await requirePermission("ver_auditoria");
   const logs = await listScopedRecords("auditoria_logs", { orderBy: "created_at", ascending: false, includeDeleted: true });
   const logsFormatados = logs.map((log) => ({
     ...log,

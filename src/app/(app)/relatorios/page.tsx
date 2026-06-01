@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/shared/data-table";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
+import { requirePermission } from "@/lib/auth";
 import { getContratos } from "@/modules/contratos/queries";
 import { getContasFinanceiras } from "@/modules/financeiro/queries";
 import { getInventarioItens } from "@/modules/inventario/queries";
@@ -11,6 +12,7 @@ import { getAtestados, getFerias, getFuncionarios } from "@/modules/rh/queries";
 import { getTasks } from "@/modules/tarefas/queries";
 
 export default async function RelatoriosPage() {
+  await requirePermission("ver_relatorios");
   const [contas, funcionarios, atestados, ferias, contratos, inventario, incidentes, solicitacoes, tasks] = await Promise.all([
     getContasFinanceiras(),
     getFuncionarios(),

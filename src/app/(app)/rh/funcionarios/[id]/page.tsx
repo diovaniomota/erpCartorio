@@ -2,13 +2,18 @@ import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { requirePermission } from "@/lib/auth";
 import { getFuncionario } from "@/modules/rh/queries";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 export default async function FuncionarioDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const context = await requirePermission("ver_dados_rh");
   const { id } = await params;
   const funcionario = await getFuncionario(id);
   if (!funcionario) notFound();
+
+  // Salary and full CPF are only shown to users with "gerenciar_funcionarios"
+  const canSeeSensitive = context.permissions.includes("gerenciar_funcionarios");
 
   return (
     <>
@@ -22,11 +27,27 @@ export default async function FuncionarioDetailPage({ params }: { params: Promis
           <Info label="Setor" value={funcionario.setor} />
           <Info label="Admissão" value={formatDate(funcionario.data_admissao)} />
           <Info label="Tipo de contrato" value={funcionario.tipo_contrato} />
-          <Info label="Salário" value={funcionario.salario ? formatCurrency(funcionario.salario) : "Restrito"} />
+          <Info
+            label="CPF"
+            value={canSeeSensitive && funcionario.cpf
+              ? funcionario.cpf
+              : funcionario.cpf
+                ? `•••.•••.•••-${funcionario.cpf.replace(/\D/g, "").slice(-2)}`
+                : "—"}
+          />
+          <Info
+            label="Salário"
+            value={canSeeSensitive && funcionario.salario
+              ? formatCurrency(funcionario.salario)
+              : "Restrito"}
+          />
           <div>
             <p className="text-sm text-muted-foreground">Status</p>
             <StatusBadge status={funcionario.status} />
           </div>
+          {funcionario.email && <Info label="E-mail" value={funcionario.email} />}
+          {funcionario.telefone && <Info label="Telefone" value={funcionario.telefone} />}
+          {funcionario.observacoes && <Info label="Observações" value={funcionario.observacoes} />}
         </CardContent>
       </Card>
     </>

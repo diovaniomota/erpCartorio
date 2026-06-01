@@ -4,10 +4,12 @@ import { DataTable } from "@/components/shared/data-table";
 import { EntityFormDialog, type EntityField } from "@/components/shared/entity-form-dialog";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
+import { requirePermission } from "@/lib/auth";
 import { createConfiguracao, deleteConfiguracao } from "@/modules/configuracoes/actions";
 import { getConfiguracoes } from "@/modules/configuracoes/queries";
 
 export default async function ConfiguracoesPage() {
+  await requirePermission("gerenciar_configuracoes");
   const configuracoes = await getConfiguracoes();
   const fields: EntityField[] = [
     { name: "chave", label: "Chave", required: true },

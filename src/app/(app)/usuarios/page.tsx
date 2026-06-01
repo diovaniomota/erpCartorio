@@ -1,8 +1,10 @@
 import { DataTable } from "@/components/shared/data-table";
 import { PageHeader } from "@/components/shared/page-header";
+import { requirePermission } from "@/lib/auth";
 import { listScopedRecords } from "@/lib/data";
 
 export default async function UsuariosPage() {
+  await requirePermission("gerenciar_usuarios");
   const profiles = await listScopedRecords("profiles", { orderBy: "nome", ascending: true });
   return (
     <>

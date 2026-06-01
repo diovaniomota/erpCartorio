@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/shared/data-table";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
+import { requirePermission } from "@/lib/auth";
 import { getContasFinanceiras, getLivroCaixa } from "@/modules/financeiro/queries";
 
 export default async function FinanceiroRelatoriosPage() {
+  await requirePermission("ver_relatorios");
   const [contas, caixa] = await Promise.all([getContasFinanceiras(), getLivroCaixa()]);
   const despesas = contas.filter((conta) => conta.tipo === "pagar");
   const receitas = contas.filter((conta) => conta.tipo === "receber");
