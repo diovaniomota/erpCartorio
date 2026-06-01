@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createScopedRecord, softDeleteScopedRecord, updateScopedRecord } from "@/lib/server-actions";
+import { createScopedRecord, restoreScopedRecord, softDeleteScopedRecord, updateScopedRecord } from "@/lib/server-actions";
 import { requirePermission } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { registerAuditLog } from "@/lib/audit";
