@@ -35,10 +35,7 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const user = session?.user;
+  const { data: { user } } = await supabase.auth.getUser();
 
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();

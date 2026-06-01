@@ -22,7 +22,7 @@ export async function loginAction(formData: FormData) {
   redirect("/dashboard");
 }
 
-export async function logoutAction() {
+export async function logoutAction(_formData: FormData) {
   if (hasSupabaseConfig()) {
     const supabase = await createSupabaseServerClient();
     await supabase.auth.signOut();
