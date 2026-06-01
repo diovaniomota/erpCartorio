@@ -41,7 +41,7 @@ export default async function RelatoriosPage() {
         title="Relatórios administrativos"
         description="Resumo consolidado dos principais controles operacionais por módulo."
       />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
         <StatCard title="Financeiro" value={contas.length} icon={WalletCards} tone="info" />
         <StatCard title="Funcionários" value={funcionarios.length} icon={UsersRound} tone="success" />
         <StatCard title="Contratos" value={contratos.length} icon={BriefcaseBusiness} tone="warning" />

@@ -16,7 +16,7 @@ export default async function RhPage() {
   return (
     <>
       <PageHeader title="RH administrativo" description="Funcionários, atestados, afastamentos, ponto, férias e benefícios." />
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
         <StatCard title="Funcionários ativos" value={funcionarios.filter((item) => item.status === "ativo").length} icon={Users} tone="success" />
         <StatCard title="Ausentes" value={funcionarios.filter((item) => ["afastado", "férias", "licença"].includes(item.status)).length} icon={UserX} tone="warning" />
         <StatCard title="Atestados recentes" value={atestados.length} icon={FileHeart} tone="info" />

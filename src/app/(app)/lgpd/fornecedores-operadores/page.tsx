@@ -32,7 +32,7 @@ export default async function LgpdFornecedoresOperadoresPage() {
         description="Fornecedores que tratam dados pessoais, descrição do tratamento, dados tratados e contrato de operador."
         actions={<EntityFormDialog title="Novo operador" fields={fields} action={createLgpdFornecedorOperador} />}
       />
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
         <StatCard title="Operadores" value={operadores.length} icon={ServerCog} tone="info" />
         <StatCard title="Ativos" value={ativos} icon={ShieldCheck} tone="success" />
         <StatCard title="Com contrato/DPA" value={comContrato} icon={FileCheck2} tone="warning" />

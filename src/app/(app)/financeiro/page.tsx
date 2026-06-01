@@ -15,7 +15,7 @@ export default async function FinanceiroPage() {
   return (
     <>
       <PageHeader title="Financeiro administrativo" description="Contas, boletos, pagamentos e caixa interno sem apagar histórico financeiro." />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
         <StatCard title="Despesas abertas" value={despesas} format="currency" icon={TrendingDown} tone="warning" />
         <StatCard title="Receitas programadas" value={receitas} format="currency" icon={TrendingUp} tone="success" />
         <StatCard title="Boletos em aberto" value={boletos} icon={Receipt} tone="info" />

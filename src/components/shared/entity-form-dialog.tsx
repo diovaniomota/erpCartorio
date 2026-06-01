@@ -77,18 +77,18 @@ export function EntityFormDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="shadow-sm">
+        <Button>
           <Plus className="h-4 w-4" />
           {triggerLabel}
         </Button>
       </DialogTrigger>
-      <DialogContent className="overflow-hidden p-0">
-        <DialogHeader className="border-b bg-[#0e1d42] px-6 py-5 text-white">
-          <DialogTitle className="text-lg text-white">{title}</DialogTitle>
-          {description ? <DialogDescription className="text-slate-300">{description}</DialogDescription> : null}
+      <DialogContent className="overflow-hidden rounded-md border-slate-200 p-0">
+        <DialogHeader className="border-b border-slate-200 bg-white px-6 py-5">
+          <DialogTitle className="text-lg text-slate-950">{title}</DialogTitle>
+          {description ? <DialogDescription className="text-slate-500">{description}</DialogDescription> : null}
         </DialogHeader>
         <form className="grid gap-0" onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="grid max-h-[64vh] gap-4 overflow-y-auto p-6 sm:grid-cols-2">
+          <div className="grid max-h-[64vh] gap-4 overflow-y-auto bg-slate-50 p-6 sm:grid-cols-2">
             {fields.map((field) => (
               <div key={field.name} className={field.type === "textarea" ? "space-y-2 sm:col-span-2" : "space-y-2"}>
                 <Label htmlFor={field.name} className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">
@@ -103,7 +103,7 @@ export function EntityFormDialog({
               </div>
             ))}
           </div>
-          <DialogFooter className="border-t bg-slate-50 px-6 py-4">
+          <DialogFooter className="border-t border-slate-200 bg-white px-6 py-4">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
@@ -130,13 +130,13 @@ function FieldControl({
   value: unknown;
 }) {
   if (field.type === "textarea") {
-    return <Textarea id={field.name} placeholder={field.placeholder} className="min-h-28 bg-white" {...register(field.name)} />;
+    return <Textarea id={field.name} placeholder={field.placeholder} className="min-h-28 rounded-md bg-white" {...register(field.name)} />;
   }
 
   if (field.type === "select") {
     return (
       <Select value={String(value ?? "")} onValueChange={(nextValue) => setValue(field.name, nextValue, { shouldValidate: true })}>
-        <SelectTrigger id={field.name} className="bg-white">
+        <SelectTrigger id={field.name} className="rounded-md bg-white">
           <SelectValue placeholder={field.placeholder ?? "Selecione"} />
         </SelectTrigger>
         <SelectContent>
@@ -152,7 +152,7 @@ function FieldControl({
 
   if (field.type === "checkbox") {
     return (
-      <div className="flex h-10 items-center gap-2 rounded-md border bg-white px-3">
+      <div className="flex h-9 items-center gap-2 rounded-md border bg-white px-3">
         <Checkbox
           id={field.name}
           checked={Boolean(value)}
@@ -169,7 +169,7 @@ function FieldControl({
       type={field.type === "money" ? "number" : field.type ?? "text"}
       step={field.type === "money" ? "0.01" : undefined}
       placeholder={field.placeholder}
-      className="bg-white"
+      className="rounded-md bg-white"
       {...register(field.name)}
     />
   );

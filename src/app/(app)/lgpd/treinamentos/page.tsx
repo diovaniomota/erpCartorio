@@ -32,7 +32,7 @@ export default async function LgpdTreinamentosPage() {
         description="Treinamentos realizados, responsáveis, participantes e comprovantes."
         actions={<EntityFormDialog title="Novo treinamento" fields={fields} action={createLgpdTreinamento} />}
       />
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
         <StatCard title="Treinamentos" value={treinamentos.length} icon={GraduationCap} tone="info" />
         <StatCard title="Participações" value={participantes} icon={UsersRound} tone="success" />
         <StatCard title="Com comprovante" value={comComprovante} icon={Paperclip} tone="warning" />

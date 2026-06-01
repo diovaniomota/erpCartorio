@@ -1,12 +1,10 @@
 import { EntityFormDialog, type EntityField } from "@/components/shared/entity-form-dialog";
-import { ModuleTabs } from "@/components/shared/module-tabs";
 import { PageHeader } from "@/components/shared/page-header";
 import { FinancialLedger } from "@/components/shared/record-views";
 import { createContaFinanceira, deleteContaFinanceira } from "@/modules/financeiro/actions";
 import { getFinanceiroCategorias, getContasFinanceiras } from "@/modules/financeiro/queries";
 import { getContratos } from "@/modules/contratos/queries";
 import { getFornecedores } from "@/modules/fornecedores/queries";
-import { ArrowDownLeft, ArrowUpRight, WalletCards } from "lucide-react";
 
 type ContasPageProps = {
   searchParams?: Promise<{ tipo?: string }>;
@@ -47,13 +45,6 @@ export default async function ContasPage({ searchParams }: ContasPageProps) {
             : "Controle de contas a pagar/receber, boletos, vencimentos e status financeiro."
         }
         actions={<EntityFormDialog title="Nova conta" fields={fields} action={createContaFinanceira} />}
-      />
-      <ModuleTabs
-        tabs={[
-          { label: "Todas", href: "/financeiro/contas", active: !tipoFiltro, count: contas.length, icon: WalletCards },
-          { label: "A pagar", href: "/financeiro/contas?tipo=pagar", active: tipoFiltro === "pagar", count: contas.filter((conta) => conta.tipo === "pagar").length, icon: ArrowUpRight },
-          { label: "A receber", href: "/financeiro/contas?tipo=receber", active: tipoFiltro === "receber", count: contas.filter((conta) => conta.tipo === "receber").length, icon: ArrowDownLeft },
-        ]}
       />
       <FinancialLedger contas={contasFiltradas} deleteAction={deleteContaFinanceira} />
     </>

@@ -30,7 +30,7 @@ export default async function LgpdPoliticasPage() {
         description="Políticas internas, versões, validade, anexos e situação de vigência."
         actions={<EntityFormDialog title="Nova política" fields={fields} action={createLgpdPolitica} />}
       />
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
         <StatCard title="Políticas cadastradas" value={politicas.length} icon={FileText} tone="info" />
         <StatCard title="Ativas" value={ativas} icon={ShieldCheck} tone="success" />
         <StatCard title="Vencendo em 30 dias" value={vencendo} icon={Timer} tone="warning" />

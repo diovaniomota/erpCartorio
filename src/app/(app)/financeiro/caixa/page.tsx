@@ -32,7 +32,7 @@ export default async function CaixaPage() {
         description="Resumo operacional do caixa administrativo, com entradas, saídas e saldo disponível."
         actions={<EntityFormDialog title="Novo movimento de caixa" fields={fields} action={createLivroCaixa} />}
       />
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
         <StatCard title="Entradas" value={entradas} format="currency" icon={ArrowUpCircle} tone="success" />
         <StatCard title="Saídas" value={saidas} format="currency" icon={ArrowDownCircle} tone="danger" />
         <StatCard title="Saldo interno" value={saldo} format="currency" icon={Wallet} tone="info" />

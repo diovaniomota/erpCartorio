@@ -35,7 +35,7 @@ export default async function FinanceiroRelatoriosPage() {
         title="Relatórios financeiros"
         description="Leitura administrativa de despesas, receitas, vencidos, fluxo de caixa e fornecedores mais pagos."
       />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
         <StatCard title="Despesas" value={despesas.reduce((sum, item) => sum + item.valor, 0)} format="currency" icon={TrendingDown} tone="warning" />
         <StatCard title="Receitas" value={receitas.reduce((sum, item) => sum + item.valor, 0)} format="currency" icon={TrendingUp} tone="success" />
         <StatCard title="Contas pagas" value={pagas.length} icon={ReceiptText} tone="success" />

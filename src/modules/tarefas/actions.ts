@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { createScopedRecord, softDeleteScopedRecord, updateScopedRecord } from "@/lib/server-actions";
 import { requirePermission } from "@/lib/auth";
-import { hasSupabaseConfig } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { registerAuditLog } from "@/lib/audit";
 import { moveTaskSchema, taskSchema } from "@/modules/tarefas/schemas";
@@ -42,10 +41,6 @@ export async function moveTask(input: unknown): Promise<ActionResult> {
   try {
     const context = await requirePermission("gerenciar_tarefas");
     const parsed = moveTaskSchema.parse(input);
-
-    if (!hasSupabaseConfig() || context.isDemo) {
-      return { ok: true, message: "Tarefa movida no quadro demo.", data: parsed };
-    }
 
     const supabase = await createSupabaseServerClient();
     const { data: previous } = await supabase

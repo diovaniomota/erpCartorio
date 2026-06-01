@@ -51,7 +51,7 @@ export function NotificationsMenu({ notifications }: NotificationsMenuProps) {
         {recent.length ? (
           recent.map((notification) => (
             <DropdownMenuItem key={notification.id} asChild>
-              <Link href={routeForNotification(notification)} className="block rounded-md px-2 py-2">
+              <Link href={routeForNotification(notification)} prefetch={false} className="block rounded-md px-2 py-2">
                 <span className="flex items-start gap-2">
                   <span className="mt-1 h-2 w-2 rounded-full bg-[#0066b3]" />
                   <span className="min-w-0">
@@ -69,7 +69,7 @@ export function NotificationsMenu({ notifications }: NotificationsMenuProps) {
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/dashboard" className="justify-center font-medium text-primary">
+          <Link href="/dashboard" prefetch={false} className="justify-center font-medium text-primary">
             Ver painel administrativo
           </Link>
         </DropdownMenuItem>

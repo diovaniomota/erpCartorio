@@ -1,12 +1,9 @@
 import { EntityFormDialog, type EntityField } from "@/components/shared/entity-form-dialog";
 import { KanbanBoard } from "@/components/shared/kanban-board";
-import { ModuleTabs } from "@/components/shared/module-tabs";
 import { PageHeader } from "@/components/shared/page-header";
 import { createTask, moveTask } from "@/modules/tarefas/actions";
 import { getTaskBoards, getTaskColumns, getTasks } from "@/modules/tarefas/queries";
 import { getFuncionarios } from "@/modules/rh/queries";
-import { AlarmClock, ClipboardList, UserRound, UsersRound } from "lucide-react";
-import { isBefore, parseISO } from "date-fns";
 
 export default async function KanbanPage() {
   const [boards, columns, tasks, funcionarios] = await Promise.all([
@@ -39,14 +36,6 @@ export default async function KanbanPage() {
         title="Tarefas · Quadro Kanban"
         description="Quadros, colunas e cartões administrativos com prioridade, responsável, prazo, vínculos, checklist, comentários e histórico."
         actions={<EntityFormDialog title="Nova tarefa" fields={fields} action={createTask} />}
-      />
-      <ModuleTabs
-        tabs={[
-          { label: "Kanban", href: "/tarefas/kanban", active: true, count: tasks.length, icon: ClipboardList },
-          { label: "Minhas", href: "/tarefas/minhas", count: tasks.length, icon: UserRound },
-          { label: "Equipe", href: "/tarefas/equipe", count: tasks.length, icon: UsersRound },
-          { label: "Atrasadas", href: "/tarefas/atrasadas", count: tasks.filter((task) => task.data_prazo && isBefore(parseISO(task.data_prazo), new Date()) && task.status !== "concluída").length, icon: AlarmClock },
-        ]}
       />
       <KanbanBoard columns={columns} tasks={tasks} moveAction={moveTask} />
     </>

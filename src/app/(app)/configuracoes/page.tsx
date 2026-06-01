@@ -28,7 +28,7 @@ export default async function ConfiguracoesPage() {
         description="Parâmetros administrativos isolados por cartório em formato estruturado."
         actions={<EntityFormDialog title="Nova configuração" fields={fields} action={createConfiguracao} />}
       />
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
         <StatCard title="Configurações ativas" value={configuracoes.length} icon={Settings} tone="info" />
         <StatCard title="Módulos configuráveis" value={cards.length} icon={Database} tone="success" />
         <StatCard title="Escopo" value={1} icon={ShieldCheck} tone="warning" />

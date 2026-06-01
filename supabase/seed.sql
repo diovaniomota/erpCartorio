@@ -1,5 +1,5 @@
 insert into public.cartorios (id, nome, cnpj, cidade, uf, plano, ativo)
-values ('11111111-1111-4111-8111-111111111111', 'Cartório de Demonstração', '12.345.678/0001-90', 'Florianópolis', 'SC', 'demo', true)
+values ('11111111-1111-4111-8111-111111111111', 'Cartório Principal', '12.345.678/0001-90', 'Florianópolis', 'SC', 'operacional', true)
 on conflict (id) do update set nome = excluded.nome;
 
 insert into auth.users (
@@ -23,10 +23,32 @@ insert into auth.users (
   crypt('CartorioHub@123', gen_salt('bf')),
   now(),
   '{"provider":"email","providers":["email"]}'::jsonb,
-  '{"nome":"Administrador Demo"}'::jsonb,
+  '{"nome":"Administrador"}'::jsonb,
   now(),
   now()
-) on conflict (id) do update set email = excluded.email, updated_at = now();
+) on conflict (id) do update set
+  email = excluded.email,
+  encrypted_password = excluded.encrypted_password,
+  email_confirmed_at = now(),
+  raw_app_meta_data = excluded.raw_app_meta_data,
+  raw_user_meta_data = excluded.raw_user_meta_data,
+  updated_at = now();
+
+update auth.users
+set
+  confirmation_token = '',
+  recovery_token = '',
+  email_change = '',
+  email_change_token_new = '',
+  email_change_token_current = '',
+  reauthentication_token = '',
+  is_sso_user = false,
+  is_anonymous = false
+where id = '22222222-2222-4222-8222-222222222222';
+
+delete from auth.identities
+where user_id = '22222222-2222-4222-8222-222222222222'
+  and provider = 'email';
 
 insert into auth.identities (
   id,
@@ -50,7 +72,7 @@ insert into auth.identities (
 set identity_data = excluded.identity_data, updated_at = now();
 
 insert into public.profiles (id, cartorio_id, auth_user_id, nome, email, cargo, setor, ativo)
-values ('22222222-2222-4222-8222-222222222222', '11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222', 'Administrador Demo', 'admin@cartoriohub.local', 'Gestor administrativo', 'Administração', true)
+values ('22222222-2222-4222-8222-222222222222', '11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222', 'Administrador', 'admin@cartoriohub.local', 'Gestor administrativo', 'Administração', true)
 on conflict (id) do update set nome = excluded.nome, email = excluded.email;
 
 insert into public.perfis (id, cartorio_id, nome, descricao, sistema)
@@ -131,7 +153,7 @@ on conflict (id) do nothing;
 
 insert into public.livro_caixa (id, cartorio_id, descricao, tipo, valor, data_movimento, forma_pagamento, observacoes)
 values
-  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1','11111111-1111-4111-8111-111111111111','Saldo inicial do caixa administrativo','entrada',4250,current_date - 15,'dinheiro','Abertura do caixa demo'),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1','11111111-1111-4111-8111-111111111111','Saldo inicial do caixa administrativo','entrada',4250,current_date - 15,'dinheiro','Abertura do caixa administrativo.'),
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2','11111111-1111-4111-8111-111111111111','Compra de material de escritório','saída',385.40,current_date - 2,'pix','Papel, pastas e toner')
 on conflict (id) do nothing;
 
@@ -163,9 +185,9 @@ on conflict (id) do nothing;
 insert into public.official_updates (id, cartorio_id, source_id, titulo, resumo, conteudo, url_original, orgao, tipo, relevancia, status, importante, publicado_em)
 values
   ('ffffffff-ffff-4fff-8fff-fffffffffff1','11111111-1111-4111-8111-111111111111','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee1','Comunicado sobre expediente administrativo','Orientação administrativa para serventias extrajudiciais.','Cadastro manual preparado para futura ingestão por RSS, API ou scraping.','https://www.tjsc.jus.br','TJSC','comunicado','alta','nova',true,current_date - 1),
-  ('ffffffff-ffff-4fff-8fff-fffffffffff2','11111111-1111-4111-8111-111111111111','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee2','Alerta de prazo LGPD','Reforço de boas práticas para resposta a titulares.','Item demo para acionar o painel LGPD.','https://www.cnj.jus.br','CNJ','alerta','crítica','em análise',true,current_date - 3),
-  ('ffffffff-ffff-4fff-8fff-fffffffffff3','11111111-1111-4111-8111-111111111111','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee1','Notícia sobre modernização administrativa','TJSC divulga orientação de gestão para rotinas internas de serventias.','Registro demo para validar o filtro de notícias oficiais e o fluxo de acompanhamento interno.','https://www.tjsc.jus.br','TJSC','notícia','média','lida',false,current_date - 5),
-  ('ffffffff-ffff-4fff-8fff-fffffffffff4','11111111-1111-4111-8111-111111111111','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee2','Provimento administrativo de referência','Provimento cadastrado manualmente para acompanhamento da equipe administrativa.','Item demo preparado para gerar tarefa, evento de agenda e comentários internos.','https://www.cnj.jus.br','CNJ','provimento','alta','nova',true,current_date - 7)
+  ('ffffffff-ffff-4fff-8fff-fffffffffff2','11111111-1111-4111-8111-111111111111','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee2','Alerta de prazo LGPD','Reforço de boas práticas para resposta a titulares.','Registro inicial para acionar o painel LGPD.','https://www.cnj.jus.br','CNJ','alerta','crítica','em análise',true,current_date - 3),
+  ('ffffffff-ffff-4fff-8fff-fffffffffff3','11111111-1111-4111-8111-111111111111','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee1','Notícia sobre modernização administrativa','TJSC divulga orientação de gestão para rotinas internas de serventias.','Registro inicial para validar o filtro de notícias oficiais e o fluxo de acompanhamento interno.','https://www.tjsc.jus.br','TJSC','notícia','média','lida',false,current_date - 5),
+  ('ffffffff-ffff-4fff-8fff-fffffffffff4','11111111-1111-4111-8111-111111111111','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee2','Provimento administrativo de referência','Provimento cadastrado manualmente para acompanhamento da equipe administrativa.','Registro inicial preparado para gerar tarefa, evento de agenda e comentários internos.','https://www.cnj.jus.br','CNJ','provimento','alta','nova',true,current_date - 7)
 on conflict (id) do nothing;
 
 insert into public.task_boards (id, cartorio_id, nome, descricao, criado_por, ativo)

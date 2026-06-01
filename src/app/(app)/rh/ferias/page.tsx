@@ -44,7 +44,7 @@ export default async function FeriasPage() {
         description="Controle de período aquisitivo, solicitações, aprovação, calendário e histórico administrativo."
         actions={<EntityFormDialog title="Nova solicitação de férias" fields={fields} action={createFerias} />}
       />
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
         <StatCard title="Em andamento" value={emAndamento} icon={Plane} tone="info" />
         <StatCard title="Aprovadas" value={aprovadas} icon={CalendarCheck2} tone="success" />
         <StatCard title="Pendentes" value={pendentes} icon={TimerReset} tone="warning" />

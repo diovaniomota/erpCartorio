@@ -3,13 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission } from "@/lib/auth";
-import { hasSupabaseConfig } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { registerAuditLog } from "@/lib/audit";
-import type { ActionResult, DemoTableName, Json } from "@/lib/types";
+import type { ActionResult, Json, TableName } from "@/lib/types";
 
 type MutationOptions = {
-  table: DemoTableName | string;
+  table: TableName | string;
   schema: z.ZodTypeAny;
   permission: string;
   modulo: string;
@@ -24,14 +23,6 @@ export async function createScopedRecord(
   try {
     const context = await requirePermission(options.permission);
     const parsed = options.schema.parse(input) as Record<string, unknown>;
-
-    if (!hasSupabaseConfig() || context.isDemo) {
-      return {
-        ok: true,
-        message: "Registro validado. Configure o Supabase para persistir dados fora do modo demo.",
-        data: parsed,
-      };
-    }
 
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
@@ -83,14 +74,6 @@ export async function updateScopedRecord(
       .partial()
       .parse(input) as Record<string, unknown>;
 
-    if (!hasSupabaseConfig() || context.isDemo) {
-      return {
-        ok: true,
-        message: "Registro validado. Configure o Supabase para persistir dados fora do modo demo.",
-        data: parsed,
-      };
-    }
-
     const supabase = await createSupabaseServerClient();
     const { data: previous } = await supabase
       .from(options.table)
@@ -141,13 +124,6 @@ export async function softDeleteScopedRecord(
 ): Promise<ActionResult> {
   try {
     const context = await requirePermission(options.permission);
-
-    if (!hasSupabaseConfig() || context.isDemo) {
-      return {
-        ok: true,
-        message: "Exclusão lógica validada. Configure o Supabase para persistir dados fora do modo demo.",
-      };
-    }
 
     const supabase = await createSupabaseServerClient();
     const { data: previous } = await supabase

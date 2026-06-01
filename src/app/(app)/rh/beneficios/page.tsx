@@ -32,7 +32,7 @@ export default async function BeneficiosPage() {
         description="Benefícios por funcionário, valores mensais e situação ativa/inativa."
         actions={<EntityFormDialog title="Novo benefício" fields={fields} action={createBeneficio} />}
       />
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
         <StatCard title="Benefícios ativos" value={ativos.length} icon={CircleCheck} tone="success" />
         <StatCard title="Funcionários atendidos" value={funcionariosAtendidos} icon={UsersRound} tone="info" />
         <StatCard title="Custo mensal" value={custoMensal} format="currency" icon={BadgeDollarSign} tone="warning" />

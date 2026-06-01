@@ -1,4 +1,3 @@
-import { hasSupabaseConfig } from "@/lib/env";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const STORAGE_BUCKETS = {
@@ -13,10 +12,6 @@ export async function uploadPrivateFile(
   path: string,
   file: File,
 ) {
-  if (!hasSupabaseConfig()) {
-    return { path, url: null, demo: true };
-  }
-
   const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase.storage
     .from(STORAGE_BUCKETS[bucket])
@@ -26,5 +21,5 @@ export async function uploadPrivateFile(
     throw error;
   }
 
-  return { path: data.path, url: null, demo: false };
+  return { path: data.path, url: null };
 }

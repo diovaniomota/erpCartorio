@@ -1,11 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { randomUUID } from "crypto";
 import { createScopedRecord, softDeleteScopedRecord } from "@/lib/server-actions";
 import { registerAuditLog } from "@/lib/audit";
 import { requirePermission } from "@/lib/auth";
-import { hasSupabaseConfig } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { chatConversaSchema, chatMensagemSchema } from "@/modules/chat/schemas";
 import type { ActionResult, ChatMensagem, Json } from "@/lib/types";
@@ -33,27 +31,6 @@ export async function createChatMensagem(input: unknown): Promise<ActionResult<C
   try {
     const context = await requirePermission("usar_chat");
     const parsed = chatMensagemSchema.parse(input);
-    const now = new Date().toISOString();
-
-    if (!hasSupabaseConfig() || context.isDemo) {
-      return {
-        ok: true,
-        message: "Mensagem enviada.",
-        data: {
-          id: randomUUID(),
-          cartorio_id: context.cartorioId,
-          conversa_id: parsed.conversa_id,
-          conversa_nome: null,
-          usuario_id: context.userId,
-          usuario_nome: context.profile.nome,
-          mensagem: parsed.mensagem,
-          anexos: [],
-          fixada: parsed.fixada,
-          created_at: now,
-          updated_at: now,
-        },
-      };
-    }
 
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase

@@ -46,7 +46,7 @@ export default async function PontoPage() {
         description="Marcações de entrada, almoço, retorno, saída final, ajustes manuais e aprovação administrativa."
         actions={<EntityFormDialog title="Nova marcação" fields={fields} action={createPonto} />}
       />
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
         <StatCard title="Marcações hoje" value={marcacoesHoje.length} icon={Clock3} tone="info" />
         <StatCard title="Funcionários com ponto" value={funcionariosComPonto} icon={UserCheck} tone="success" />
         <StatCard title="Ajustes pendentes" value={ajustesPendentes.length} icon={FileCheck2} tone="warning" />

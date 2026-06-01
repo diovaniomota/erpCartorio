@@ -1,5 +1,5 @@
 -- Execute este arquivo no SQL Editor do Supabase depois da migration inicial.
--- Ele cria um cartório e um usuário administrador para teste.
+-- Ele cria um cartório e um usuário administrador inicial.
 --
 -- Login:
 --   E-mail: admin@cartoriohub.local
@@ -8,11 +8,11 @@
 insert into public.cartorios (id, nome, cnpj, cidade, uf, plano, ativo)
 values (
   '11111111-1111-4111-8111-111111111111',
-  'Cartório de Demonstração',
+  'Cartório Principal',
   '12.345.678/0001-90',
   'Florianópolis',
   'SC',
-  'demo',
+  'operacional',
   true
 )
 on conflict (id) do update
@@ -44,7 +44,7 @@ insert into auth.users (
   crypt('CartorioHub@123', gen_salt('bf')),
   now(),
   '{"provider":"email","providers":["email"]}'::jsonb,
-  '{"nome":"Administrador Demo"}'::jsonb,
+  '{"nome":"Administrador"}'::jsonb,
   now(),
   now()
 )
@@ -55,6 +55,22 @@ set email = excluded.email,
     raw_app_meta_data = excluded.raw_app_meta_data,
     raw_user_meta_data = excluded.raw_user_meta_data,
     updated_at = now();
+
+update auth.users
+set
+  confirmation_token = '',
+  recovery_token = '',
+  email_change = '',
+  email_change_token_new = '',
+  email_change_token_current = '',
+  reauthentication_token = '',
+  is_sso_user = false,
+  is_anonymous = false
+where id = '22222222-2222-4222-8222-222222222222';
+
+delete from auth.identities
+where user_id = '22222222-2222-4222-8222-222222222222'
+  and provider = 'email';
 
 insert into auth.identities (
   id,
@@ -84,7 +100,7 @@ values (
   '22222222-2222-4222-8222-222222222222',
   '11111111-1111-4111-8111-111111111111',
   '22222222-2222-4222-8222-222222222222',
-  'Administrador Demo',
+  'Administrador',
   'admin@cartoriohub.local',
   'Gestor administrativo',
   'Administração',

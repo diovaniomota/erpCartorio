@@ -1,11 +1,7 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { hasSupabaseConfig } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { DEMO_CARTORIO_ID, DEMO_USER_ID, demoData } from "@/lib/demo-data";
 import type { Cartorio, UserProfile } from "@/lib/types";
-
-const DEMO_COOKIE = "cartoriohub_demo_session";
 
 export type SessionContext = {
   cartorioId: string;
@@ -13,18 +9,14 @@ export type SessionContext = {
   profile: UserProfile;
   cartorio: Cartorio;
   permissions: string[];
-  isDemo: boolean;
 };
 
-export async function getCurrentUserProfile(): Promise<UserProfile> {
-  if (!hasSupabaseConfig() || (await hasDemoSession())) {
-    return demoData.profiles[0];
-  }
-
+export const getCurrentUserProfile = cache(async function getCurrentUserProfile(): Promise<UserProfile> {
   const supabase = await createSupabaseServerClient();
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user;
 
   if (!user) {
     redirect("/login");
@@ -33,7 +25,7 @@ export async function getCurrentUserProfile(): Promise<UserProfile> {
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", user.id)
+    .or(`id.eq.${user.id},auth_user_id.eq.${user.id}`)
     .maybeSingle();
 
   if (error || !data) {
@@ -41,14 +33,10 @@ export async function getCurrentUserProfile(): Promise<UserProfile> {
   }
 
   return data as UserProfile;
-}
+});
 
-export async function getCurrentCartorio(): Promise<Cartorio> {
+export const getCurrentCartorio = cache(async function getCurrentCartorio(): Promise<Cartorio> {
   const profile = await getCurrentUserProfile();
-
-  if (!hasSupabaseConfig() || (await hasDemoSession())) {
-    return demoData.cartorios[0];
-  }
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
@@ -62,13 +50,9 @@ export async function getCurrentCartorio(): Promise<Cartorio> {
   }
 
   return data as Cartorio;
-}
+});
 
-export async function getCurrentPermissions(): Promise<string[]> {
-  if (!hasSupabaseConfig() || (await hasDemoSession())) {
-    return demoData.permissoes.map((permission) => permission.chave);
-  }
-
+export const getCurrentPermissions = cache(async function getCurrentPermissions(): Promise<string[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("user_permission_keys");
 
@@ -77,25 +61,11 @@ export async function getCurrentPermissions(): Promise<string[]> {
   }
 
   return data as string[];
-}
+});
 
-export async function getSessionContext(): Promise<SessionContext> {
-  if (!hasSupabaseConfig() || (await hasDemoSession())) {
-    return {
-      cartorioId: DEMO_CARTORIO_ID,
-      userId: DEMO_USER_ID,
-      profile: demoData.profiles[0],
-      cartorio: demoData.cartorios[0],
-      permissions: demoData.permissoes.map((permission) => permission.chave),
-      isDemo: true,
-    };
-  }
-
-  const [profile, cartorio, permissions] = await Promise.all([
-    getCurrentUserProfile(),
-    getCurrentCartorio(),
-    getCurrentPermissions(),
-  ]);
+export const getSessionContext = cache(async function getSessionContext(): Promise<SessionContext> {
+  const profile = await getCurrentUserProfile();
+  const [cartorio, permissions] = await Promise.all([getCurrentCartorio(), getCurrentPermissions()]);
 
   return {
     cartorioId: profile.cartorio_id,
@@ -103,9 +73,8 @@ export async function getSessionContext(): Promise<SessionContext> {
     profile,
     cartorio,
     permissions,
-    isDemo: false,
   };
-}
+});
 
 export async function requirePermission(permission: string) {
   const context = await getSessionContext();
@@ -115,9 +84,4 @@ export async function requirePermission(permission: string) {
   }
 
   return context;
-}
-
-export async function hasDemoSession() {
-  const cookieStore = await cookies();
-  return cookieStore.get(DEMO_COOKIE)?.value === "1";
 }

@@ -13,32 +13,39 @@ export async function AppTopbar() {
   const notificacoes = await listScopedRecords("notificacoes", { orderBy: "created_at", ascending: false });
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200/80 bg-white/82 px-4 shadow-sm shadow-slate-200/40 backdrop-blur-xl lg:px-6">
+    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 lg:px-7">
+      <div className="mx-auto flex h-16 w-full max-w-[1480px] items-center gap-3">
       <Suspense fallback={null}>
         <MobileSidebar />
       </Suspense>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-slate-950">{context.cartorio.nome}</p>
-        <p className="text-xs text-slate-500">
-          {context.isDemo ? "Sessão de demonstração operacional" : "Ambiente conectado ao Supabase"}
-        </p>
+      <div className="hidden min-w-0 flex-1 lg:block">
+        <div className="inline-flex max-w-full items-center gap-3 border-l-2 border-emerald-500 pl-3">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold leading-5 text-slate-950">{context.cartorio.nome}</p>
+            <p className="truncate text-xs text-slate-500">Base administrativa conectada</p>
+          </div>
+        </div>
       </div>
-      <GlobalSearch />
+      <div className="min-w-0 flex-1 lg:max-w-xl">
+        <GlobalSearch />
+      </div>
       <NotificationsMenu notifications={notificacoes} />
-      <div className="flex items-center gap-3">
-        <Avatar className="border border-slate-200/50 bg-slate-50 shadow-sm transition-transform hover:scale-105">
+      <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+        <Avatar className="h-8 w-8 border border-slate-200 bg-slate-50">
           <AvatarFallback>{context.profile.nome.slice(0, 2).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div className="hidden min-w-0 md:block">
-          <p className="truncate text-sm font-medium">{context.profile.nome}</p>
+          <p className="truncate text-sm font-semibold leading-5 text-slate-950">{context.profile.nome}</p>
           <p className="truncate text-xs text-muted-foreground">{context.profile.email}</p>
         </div>
       </div>
       <form action={logoutAction}>
-        <Button type="submit" variant="ghost" size="sm">
+        <Button type="submit" variant="outline" size="sm">
           Sair
         </Button>
       </form>
+      </div>
     </header>
   );
 }

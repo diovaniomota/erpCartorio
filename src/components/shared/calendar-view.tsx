@@ -4,6 +4,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
+import ptBrLocale from "@fullcalendar/core/locales/pt-br";
 import type { AgendaEvento } from "@/lib/types";
 
 const eventColors: Record<string, string> = {
@@ -22,16 +23,23 @@ const eventColors: Record<string, string> = {
 
 export function CalendarView({ events }: { events: AgendaEvento[] }) {
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <div className="rounded-md border border-slate-200 bg-white p-4">
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
+        locale={ptBrLocale}
         headerToolbar={{
           left: "prev,next today",
           center: "title",
           right: "dayGridMonth,timeGridWeek,timeGridDay",
         }}
-        locale="pt-br"
+        buttonText={{
+          today: "Hoje",
+          month: "Mês",
+          week: "Semana",
+          day: "Dia",
+        }}
+        allDayText="Dia todo"
         height="auto"
         events={events.map((event) => ({
           id: event.id,

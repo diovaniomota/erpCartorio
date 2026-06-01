@@ -435,7 +435,7 @@ export type AuditoriaLog = {
   created_at: string;
 };
 
-export type DemoTableMap = {
+export type TableMap = {
   cartorios: Cartorio[];
   profiles: UserProfile[];
   perfis: Perfil[];
@@ -475,4 +475,4 @@ export type DemoTableMap = {
   auditoria_logs: AuditoriaLog[];
 };
 
-export type DemoTableName = keyof DemoTableMap;
+export type TableName = keyof TableMap;

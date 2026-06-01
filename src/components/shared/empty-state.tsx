@@ -13,8 +13,8 @@ export function EmptyState({
 }) {
   return (
     <Card>
-      <CardContent className="flex min-h-48 flex-col items-center justify-center gap-3 p-8 text-center">
-        <div className="rounded-md bg-muted p-3">
+      <CardContent className="flex min-h-40 flex-col items-center justify-center gap-3 p-8 text-center">
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
           <Icon className="h-6 w-6 text-muted-foreground" />
         </div>
         <div>

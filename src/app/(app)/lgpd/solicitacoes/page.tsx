@@ -51,7 +51,7 @@ export default async function LgpdSolicitacoesPage() {
         description="Controle de pedidos LGPD, prazos de resposta, responsável e situação de atendimento."
         actions={<EntityFormDialog title="Nova solicitação" fields={fields} action={createLgpdSolicitacao} />}
       />
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
         <StatCard title="Solicitações abertas" value={solicitacoes.filter((item) => item.status !== "concluída").length} icon={Inbox} tone="info" />
         <StatCard title="Vencendo em 7 dias" value={vencendo} icon={Timer} tone="warning" />
         <StatCard title="Atrasadas" value={atrasadas} icon={AlertTriangle} tone="danger" />

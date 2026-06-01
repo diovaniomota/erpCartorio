@@ -3,24 +3,14 @@
 import Link from "next/link";
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { format } from "date-fns";
-import {
-  Bell,
-  Hash,
-  Lock,
-  MessageCircle,
-  Paperclip,
-  Pin,
-  Send,
-  ShieldCheck,
-  UsersRound,
-} from "lucide-react";
+import { Hash, Lock, MessageSquarePlus, Paperclip, Pin, Search, Send, UsersRound } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { EntityFormDialog, type EntityField } from "@/components/shared/entity-form-dialog";
-import { PageHeader } from "@/components/shared/page-header";
 import type { ActionResult, ChatConversa, ChatMensagem, UserProfile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -53,12 +43,25 @@ export function ChatWorkspace({
   createConversaAction,
   createMensagemAction,
 }: ChatWorkspaceProps) {
+  const [query, setQuery] = useState("");
   const [localMessages, setLocalMessages] = useState(mensagens);
   const selectedConversa = conversas.find((item) => item.id === activeConversaId) ?? conversas[0] ?? null;
 
   useEffect(() => {
     setLocalMessages(mensagens);
   }, [mensagens]);
+
+  const filteredConversas = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return conversas;
+
+    return conversas.filter((conversa) => {
+      const latest = localMessages
+        .filter((message) => message.conversa_id === conversa.id)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+      return `${conversa.nome ?? ""} ${conversa.setor ?? ""} ${latest?.mensagem ?? ""}`.toLowerCase().includes(needle);
+    });
+  }, [conversas, localMessages, query]);
 
   const mensagensDaConversa = useMemo(
     () =>
@@ -70,99 +73,94 @@ export function ChatWorkspace({
     [localMessages, selectedConversa],
   );
 
-  const fixadas = mensagensDaConversa.filter((message) => message.fixada);
+  const pinnedMessages = mensagensDaConversa.filter((message) => message.fixada);
   const canais = conversas.filter((item) => item.tipo === "canal");
 
-  return (
-    <>
-      <PageHeader
-        title="Chat interno"
-        description="Canais, grupos por setor, mensagens fixadas e histórico administrativo da equipe."
-        actions={
-          <EntityFormDialog
-            title="Novo canal ou grupo"
-            triggerLabel="Nova conversa"
-            fields={conversaFields}
-            action={createConversaAction}
-          />
-        }
-      />
+  function persistMessage(message: ChatMensagem) {
+    setLocalMessages((current) => mergeMessages(current, [message]));
+  }
 
-      <section className="grid h-[calc(100vh-13rem)] min-h-[680px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm xl:grid-cols-[330px_minmax(0,1fr)_300px]">
-        <aside className="flex min-h-0 flex-col border-b border-slate-200 bg-slate-50/80 xl:border-b-0 xl:border-r">
-          <div className="border-b border-slate-200 px-4 py-4">
+  return (
+    <section className="h-[calc(100vh-6.5rem)] min-h-[720px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.14)]">
+      <div className="grid h-full lg:grid-cols-[330px_minmax(0,1fr)] 2xl:grid-cols-[330px_minmax(0,1fr)_310px]">
+        <aside className="flex min-h-0 flex-col border-b border-slate-200 bg-[#08111f] text-white lg:border-b-0 lg:border-r lg:border-slate-900">
+          <div className="border-b border-white/10 p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-slate-950">Conversas</p>
-                <p className="text-xs text-muted-foreground">
-                  {conversas.length} conversas, {canais.length} canais
+                <p className="text-lg font-semibold">Chat interno</p>
+                <p className="text-xs text-slate-300">
+                  {canais.length} canais · {localMessages.length} mensagens
                 </p>
               </div>
-              <div className="rounded-md bg-emerald-50 p-2 text-emerald-700">
-                <MessageCircle className="h-4 w-4" />
-              </div>
+              <EntityFormDialog
+                title="Nova conversa"
+                triggerLabel="Nova"
+                fields={conversaFields}
+                action={createConversaAction}
+              />
+            </div>
+            <div className="relative mt-4">
+              <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Buscar conversa"
+                className="border-white/10 bg-white/[0.08] pl-9 text-white placeholder:text-slate-400 focus-visible:ring-[#d6b25e]"
+              />
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
-            {conversas.map((conversa) => (
-              <ConversationLink
-                key={conversa.id}
-                conversa={conversa}
-                messages={localMessages.filter((message) => message.conversa_id === conversa.id)}
-                active={selectedConversa?.id === conversa.id}
-              />
-            ))}
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">
+            <div className="space-y-1">
+              {filteredConversas.map((conversa) => (
+                <ConversationRow
+                  key={conversa.id}
+                  conversa={conversa}
+                  messages={localMessages.filter((message) => message.conversa_id === conversa.id)}
+                  active={selectedConversa?.id === conversa.id}
+                />
+              ))}
+            </div>
           </div>
         </aside>
 
-        <main className="flex min-h-0 flex-col bg-white">
+        <main className="flex min-h-0 flex-col bg-[linear-gradient(180deg,#f8fafc,#edf3f8)]">
           {selectedConversa ? (
             <>
-              <ChatHeader conversa={selectedConversa} messageCount={mensagensDaConversa.length} pinnedCount={fixadas.length} />
-              {fixadas.length ? (
-                <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                  <div className="flex items-start gap-2">
-                    <Pin className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
-                    <div className="min-w-0">
-                      <p className="font-medium">Mensagem fixada</p>
-                      <p className="line-clamp-2 text-amber-900">{fixadas[fixadas.length - 1].mensagem}</p>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-              <MessageList messages={mensagensDaConversa} currentUserId={currentUser.id} />
-              <MessageComposer
+              <ThreadHeader conversa={selectedConversa} messageCount={mensagensDaConversa.length} pinnedCount={pinnedMessages.length} />
+              {pinnedMessages.length ? <PinnedStrip message={pinnedMessages[pinnedMessages.length - 1]} /> : null}
+              <MessageThread messages={mensagensDaConversa} currentUserId={currentUser.id} />
+              <Composer
                 conversa={selectedConversa}
                 currentUser={currentUser}
                 createMensagemAction={createMensagemAction}
-                onMessageCreated={(message) => setLocalMessages((current) => [...current, message])}
+                onCreated={persistMessage}
               />
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center p-8 text-center">
               <div>
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-                  <MessageCircle className="h-5 w-5" />
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                  <MessageSquarePlus className="h-6 w-6" />
                 </div>
-                <h2 className="mt-4 text-base font-semibold">Nenhuma conversa cadastrada</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Crie um canal para iniciar a comunicação interna.</p>
+                <h2 className="mt-4 text-base font-semibold text-slate-950">Nenhuma conversa encontrada</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Crie um canal ou ajuste a busca.</p>
               </div>
             </div>
           )}
         </main>
 
-        <aside className="hidden min-h-0 flex-col border-l border-slate-200 bg-slate-50/70 xl:flex">
+        <aside className="hidden min-h-0 flex-col border-l border-slate-200 bg-white/[0.92] 2xl:flex">
           {selectedConversa ? (
-            <ConversationPanel conversa={selectedConversa} pinnedMessages={fixadas} messages={mensagensDaConversa} />
+            <ThreadDetails conversa={selectedConversa} messages={mensagensDaConversa} pinnedMessages={pinnedMessages} />
           ) : null}
         </aside>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }
 
-function ConversationLink({
+function ConversationRow({
   conversa,
   messages,
   active,
@@ -171,71 +169,52 @@ function ConversationLink({
   messages: ChatMensagem[];
   active: boolean;
 }) {
-  const latest = messages[messages.length - 1];
+  const latest = [...messages].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
   const Icon = conversa.tipo === "individual" ? Lock : conversa.tipo === "grupo" ? UsersRound : Hash;
 
   return (
     <Link
       href={`/chat/${conversa.id}`}
       className={cn(
-        "block rounded-md border p-3 transition-colors",
-        active
-          ? "border-emerald-200 bg-white shadow-sm ring-1 ring-emerald-100"
-          : "border-transparent bg-transparent hover:border-slate-200 hover:bg-white",
+        "block rounded-2xl px-3 py-3 transition-colors",
+        active ? "bg-white text-slate-950 shadow-lg shadow-slate-950/15" : "text-slate-300 hover:bg-white/[0.08] hover:text-white",
       )}
     >
       <div className="flex items-start gap-3">
-        <div
-          className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-md",
-            active ? "bg-emerald-700 text-white" : "bg-slate-200 text-slate-700",
-          )}
-        >
+        <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl", active ? "bg-[#d6b25e]/20 text-[#9b7928]" : "bg-white/10 text-slate-300")}>
           <Icon className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <p className="truncate text-sm font-semibold text-slate-950">{conversa.nome}</p>
-            <span className="text-[11px] text-muted-foreground">{latest ? formatChatTime(latest.created_at) : ""}</span>
+            <p className="truncate text-sm font-semibold">{conversa.nome}</p>
+            <span className={cn("text-[11px]", active ? "text-slate-500" : "text-slate-400")}>{latest ? formatChatTime(latest.created_at) : ""}</span>
           </div>
-          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-            {latest ? latest.mensagem : conversa.setor ? `Canal do setor ${conversa.setor}` : "Sem mensagens ainda"}
+          <p className={cn("mt-1 line-clamp-1 text-xs", active ? "text-slate-500" : "text-slate-400")}>
+            {latest?.mensagem ?? (conversa.setor ? `Canal do setor ${conversa.setor}` : "Sem mensagens")}
           </p>
-          <div className="mt-2 flex items-center justify-between">
-            <Badge variant={active ? "secondary" : "outline"}>{conversa.tipo}</Badge>
-            {messages.length ? <span className="text-xs font-medium text-slate-500">{messages.length}</span> : null}
-          </div>
         </div>
       </div>
     </Link>
   );
 }
 
-function ChatHeader({
-  conversa,
-  messageCount,
-  pinnedCount,
-}: {
-  conversa: ChatConversa;
-  messageCount: number;
-  pinnedCount: number;
-}) {
+function ThreadHeader({ conversa, messageCount, pinnedCount }: { conversa: ChatConversa; messageCount: number; pinnedCount: number }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4">
+    <div className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white/[0.92] px-5 py-4 backdrop-blur">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#0b1f25] text-white">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white">
           {conversa.tipo === "canal" ? <Hash className="h-5 w-5" /> : <UsersRound className="h-5 w-5" />}
         </div>
         <div className="min-w-0">
-          <h2 className="truncate text-base font-semibold text-slate-950">{conversa.nome}</h2>
+          <h1 className="truncate text-base font-semibold text-slate-950">{conversa.nome}</h1>
           <p className="truncate text-xs text-muted-foreground">
             {conversa.setor ? `Setor ${conversa.setor}` : "Comunicação interna"} · {messageCount} mensagens
           </p>
         </div>
       </div>
-      <div className="hidden items-center gap-2 sm:flex">
+      <div className="hidden items-center gap-2 md:flex">
         {pinnedCount ? (
-          <Badge variant="outline" className="gap-1">
+          <Badge variant="warning" className="gap-1">
             <Pin className="h-3 w-3" />
             {pinnedCount}
           </Badge>
@@ -246,7 +225,21 @@ function ChatHeader({
   );
 }
 
-function MessageList({ messages, currentUserId }: { messages: ChatMensagem[]; currentUserId: string }) {
+function PinnedStrip({ message }: { message: ChatMensagem }) {
+  return (
+    <div className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-950">
+      <div className="flex items-start gap-2">
+        <Pin className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+        <div className="min-w-0">
+          <p className="font-semibold">Fixada</p>
+          <p className="line-clamp-1 text-amber-900">{message.mensagem}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MessageThread({ messages, currentUserId }: { messages: ChatMensagem[]; currentUserId: string }) {
   const endRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -255,49 +248,47 @@ function MessageList({ messages, currentUserId }: { messages: ChatMensagem[]; cu
 
   if (!messages.length) {
     return (
-      <div className="flex flex-1 items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(15,118,110,0.08),transparent_38%)] p-8 text-center">
+      <div className="flex flex-1 items-center justify-center p-8 text-center">
         <div>
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-            <Send className="h-5 w-5" />
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-slate-400 shadow-sm">
+            <Send className="h-6 w-6" />
           </div>
-          <h3 className="mt-4 text-sm font-semibold">Comece a conversa</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Envie a primeira mensagem para registrar o histórico do canal.</p>
+          <h2 className="mt-4 text-base font-semibold text-slate-950">Conversa vazia</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Envie a primeira mensagem para iniciar o histórico.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-4 py-5">
-      <div className="mx-auto max-w-4xl space-y-4">
+    <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6">
+      <div className="mx-auto max-w-3xl space-y-5">
         {messages.map((message) => {
           const mine = message.usuario_id === currentUserId;
           return (
-            <div key={message.id} className={cn("flex items-end gap-2", mine ? "justify-end" : "justify-start")}>
+            <div key={message.id} className={cn("flex gap-3", mine ? "justify-end" : "justify-start")}>
               {!mine ? (
-                <Avatar className="h-8 w-8 border border-slate-200">
-                  <AvatarFallback>{initials(message.usuario_nome ?? "Usuário")}</AvatarFallback>
+                <Avatar className="mt-6 h-9 w-9 border border-slate-200">
+                  <AvatarFallback>{initials(message.usuario_nome ?? "U")}</AvatarFallback>
                 </Avatar>
               ) : null}
-              <div className={cn("max-w-[78%] space-y-1", mine && "items-end text-right")}>
-                <div className={cn("flex items-center gap-2 text-xs text-muted-foreground", mine && "justify-end")}>
-                  <span className="font-medium text-slate-600">{message.usuario_nome ?? "Usuário"}</span>
+              <div className={cn("max-w-[78%]", mine && "text-right")}>
+                <div className={cn("mb-1 flex items-center gap-2 text-xs text-slate-500", mine && "justify-end")}>
+                  <span>{message.usuario_nome ?? "Usuário"}</span>
                   <span>{formatChatTime(message.created_at)}</span>
                   {message.fixada ? <Pin className="h-3.5 w-3.5 text-amber-600" /> : null}
                 </div>
                 <div
                   className={cn(
                     "rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm",
-                    mine
-                      ? "rounded-br-sm bg-emerald-700 text-white"
-                      : "rounded-bl-sm border border-slate-200 bg-white text-slate-800",
+                    mine ? "rounded-br-md bg-[#0f766e] text-white" : "rounded-bl-md border border-slate-200 bg-white text-slate-800",
                   )}
                 >
                   <p className="whitespace-pre-wrap">{message.mensagem}</p>
                 </div>
               </div>
               {mine ? (
-                <Avatar className="h-8 w-8 border border-emerald-200">
+                <Avatar className="mt-6 h-9 w-9 border border-emerald-200">
                   <AvatarFallback className="bg-emerald-50 text-emerald-800">{initials(message.usuario_nome ?? "Eu")}</AvatarFallback>
                 </Avatar>
               ) : null}
@@ -310,16 +301,16 @@ function MessageList({ messages, currentUserId }: { messages: ChatMensagem[]; cu
   );
 }
 
-function MessageComposer({
+function Composer({
   conversa,
   currentUser,
   createMensagemAction,
-  onMessageCreated,
+  onCreated,
 }: {
   conversa: ChatConversa;
   currentUser: UserProfile;
   createMensagemAction: (input: unknown) => Promise<ActionResult<ChatMensagem>>;
-  onMessageCreated: (message: ChatMensagem) => void;
+  onCreated: (message: ChatMensagem) => void;
 }) {
   const [message, setMessage] = useState("");
   const [fixada, setFixada] = useState(false);
@@ -328,9 +319,7 @@ function MessageComposer({
   function submit(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
     const trimmed = message.trim();
-    if (!trimmed || isPending) {
-      return;
-    }
+    if (!trimmed || isPending) return;
 
     startTransition(async () => {
       const result = await createMensagemAction({
@@ -344,7 +333,7 @@ function MessageComposer({
         return;
       }
 
-      onMessageCreated({
+      onCreated({
         ...result.data,
         conversa_nome: conversa.nome ?? null,
         usuario_nome: result.data.usuario_nome ?? currentUser.nome,
@@ -363,29 +352,29 @@ function MessageComposer({
   }
 
   return (
-    <form onSubmit={submit} className="border-t border-slate-200 bg-white p-4">
-      <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 shadow-inner">
+    <form onSubmit={submit} className="border-t border-slate-200 bg-white/[0.94] px-5 py-4 backdrop-blur">
+      <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-slate-50 p-2 shadow-inner">
         <Textarea
           value={message}
           onChange={(event) => setMessage(event.target.value)}
           onKeyDown={onKeyDown}
-          placeholder={`Mensagem para ${conversa.nome}`}
-          className="min-h-20 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
+          placeholder={`Escreva em ${conversa.nome}`}
+          className="min-h-16 resize-none border-0 bg-transparent px-3 py-2 shadow-none focus-visible:ring-0"
         />
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-2">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2 border-t border-slate-200 pt-2">
+          <div className="flex items-center gap-1">
             <Button type="button" variant={fixada ? "secondary" : "ghost"} size="sm" onClick={() => setFixada((current) => !current)}>
               <Pin className="h-4 w-4" />
               Fixar
             </Button>
             <span className="inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm text-muted-foreground">
               <Paperclip className="h-4 w-4" />
-              Anexos no histórico
+              Anexo
             </span>
           </div>
           <Button type="submit" disabled={!message.trim() || isPending}>
             <Send className="h-4 w-4" />
-            {isPending ? "Enviando..." : "Enviar"}
+            {isPending ? "Enviando" : "Enviar"}
           </Button>
         </div>
       </div>
@@ -393,79 +382,64 @@ function MessageComposer({
   );
 }
 
-function ConversationPanel({
+function ThreadDetails({
   conversa,
-  pinnedMessages,
   messages,
+  pinnedMessages,
 }: {
   conversa: ChatConversa;
-  pinnedMessages: ChatMensagem[];
   messages: ChatMensagem[];
+  pinnedMessages: ChatMensagem[];
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="border-b border-slate-200 p-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#0b1f25] text-white">
-          <ShieldCheck className="h-5 w-5" />
-        </div>
-        <h3 className="mt-3 text-sm font-semibold text-slate-950">{conversa.nome}</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {conversa.tipo === "canal" ? "Canal interno" : "Conversa interna"} com histórico por cartório.
-        </p>
+      <div className="border-b border-slate-200 p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Detalhes</p>
+        <h2 className="mt-2 text-lg font-semibold text-slate-950">{conversa.nome}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{conversa.setor ? `Setor ${conversa.setor}` : "Sem setor vinculado"}</p>
       </div>
-
-      <div className="space-y-4 overflow-y-auto p-4">
-        <section>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Resumo</p>
-          <div className="grid grid-cols-2 gap-2">
-            <Metric label="Mensagens" value={messages.length} />
-            <Metric label="Fixadas" value={pinnedMessages.length} />
-          </div>
-        </section>
-
-        <section>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Recursos</p>
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-2 rounded-md border bg-white p-2">
-              <Bell className="h-4 w-4 text-emerald-700" />
-              Notificações internas
-            </div>
-            <div className="flex items-center gap-2 rounded-md border bg-white p-2">
-              <Paperclip className="h-4 w-4 text-emerald-700" />
-              Anexos vinculados ao storage
-            </div>
-            <div className="flex items-center gap-2 rounded-md border bg-white p-2">
-              <Pin className="h-4 w-4 text-emerald-700" />
-              Mensagens fixadas
-            </div>
-          </div>
-        </section>
-
-        {pinnedMessages.length ? (
-          <section>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Fixadas</p>
-            <div className="space-y-2">
-              {pinnedMessages.map((message) => (
-                <div key={message.id} className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950">
+      <div className="space-y-4 overflow-y-auto p-5">
+        <div className="grid grid-cols-2 gap-2">
+          <SmallMetric label="Mensagens" value={messages.length} />
+          <SmallMetric label="Fixadas" value={pinnedMessages.length} />
+        </div>
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Fixadas</p>
+          <div className="space-y-2">
+            {pinnedMessages.length ? (
+              pinnedMessages.map((message) => (
+                <div key={message.id} className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
                   <p className="line-clamp-4">{message.mensagem}</p>
-                  <p className="mt-2 text-[11px] text-amber-800">{formatChatTime(message.created_at)}</p>
                 </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
+              ))
+            ) : (
+              <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">Nenhuma mensagem fixada.</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+function SmallMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-md border bg-white p-3">
-      <p className="text-lg font-semibold text-slate-950">{value}</p>
+    <div className="rounded-lg border bg-slate-50 p-3">
+      <p className="text-xl font-semibold text-slate-950">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );
+}
+
+function mergeMessages(...groups: ChatMensagem[][]) {
+  const map = new Map<string, ChatMensagem>();
+  for (const group of groups) {
+    for (const message of group) {
+      map.set(message.id, message);
+    }
+  }
+
+  return Array.from(map.values()).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 }
 
 function initials(name: string) {
@@ -480,9 +454,6 @@ function initials(name: string) {
 
 function formatChatTime(value: string) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
+  if (Number.isNaN(date.getTime())) return "";
   return format(date, "dd/MM HH:mm");
 }

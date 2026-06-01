@@ -1,5 +1,4 @@
 import { headers } from "next/headers";
-import { hasSupabaseConfig } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/types";
 
@@ -15,10 +14,6 @@ type AuditInput = {
 };
 
 export async function registerAuditLog(input: AuditInput) {
-  if (!hasSupabaseConfig()) {
-    return;
-  }
-
   const headerStore = await headers();
   const supabase = await createSupabaseServerClient();
 

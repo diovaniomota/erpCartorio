@@ -24,7 +24,7 @@ npm run dev
 
 Abra `http://localhost:3000`.
 
-Sem variáveis Supabase, a aplicação roda em modo demo local com dados seedados em memória. Nesse modo, formulários validam os dados e exibem sucesso, mas a persistência real acontece apenas quando o Supabase está configurado.
+As variáveis do Supabase são obrigatórias. Sem `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`, o sistema bloqueia o acesso administrativo.
 
 ## Supabase
 
@@ -36,16 +36,18 @@ Sem variáveis Supabase, a aplicação roda em modo demo local com dados seedado
 supabase db push
 ```
 
-4. Rode o seed:
+4. Rode o seed para criar a estrutura inicial:
 
 ```bash
 supabase db reset
 ```
 
-Usuário demo do seed:
+Usuário administrador inicial do seed:
 
 - E-mail: `admin@cartoriohub.local`
 - Senha: `CartorioHub@123`
+
+Se o projeto já estiver criado no Supabase remoto, você também pode executar `supabase/create_admin_account.sql` no SQL Editor para recriar o cartório, o perfil e a identidade Auth do administrador inicial.
 
 ## Estrutura
 
@@ -73,7 +75,7 @@ supabase/
 
 ## Módulos entregues no MVP
 
-- Autenticação Supabase com fallback demo
+- Autenticação Supabase
 - Layout administrativo responsivo
 - Dashboard com indicadores e gráficos
 - Central Oficial manual e fontes monitoradas
@@ -85,6 +87,6 @@ supabase/
 - LGPD básico com incidentes
 - Documentos internos
 - Tarefas Kanban com drag and drop
-- Chat interno estrutural
+- Chat interno com persistência no banco
 - Relatórios estruturais
 - Usuários, permissões e auditoria

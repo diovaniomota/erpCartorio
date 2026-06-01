@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { createScopedRecord, softDeleteScopedRecord, updateScopedRecord } from "@/lib/server-actions";
 import { requirePermission } from "@/lib/auth";
-import { hasSupabaseConfig } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { registerAuditLog } from "@/lib/audit";
 import { contaFinanceiraSchema, livroCaixaSchema, pagamentoSchema } from "@/modules/financeiro/schemas";
@@ -52,13 +51,6 @@ export async function registrarPagamento(input: unknown): Promise<ActionResult> 
   try {
     const context = await requirePermission("aprovar_pagamentos");
     const parsed = pagamentoSchema.parse(input);
-
-    if (!hasSupabaseConfig() || context.isDemo) {
-      return {
-        ok: true,
-        message: "Pagamento validado. Configure o Supabase para persistir o lançamento e o livro caixa.",
-      };
-    }
 
     const supabase = await createSupabaseServerClient();
     const { data: conta, error: contaError } = await supabase

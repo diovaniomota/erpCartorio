@@ -50,7 +50,7 @@ export default async function InventarioManutencoesPage() {
         description="Controle de manutenção preventiva e corretiva, fornecedor, custo, início, conclusão e status."
         actions={<EntityFormDialog title="Nova manutenção" fields={fields} action={createInventarioManutencao} />}
       />
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
         <StatCard title="Manutenções registradas" value={manutencoes.length} icon={Wrench} tone="info" />
         <StatCard title="Em aberto" value={abertas} icon={Hammer} tone="warning" />
         <StatCard title="Custo registrado" value={custo} format="currency" icon={CircleDollarSign} tone="neutral" />

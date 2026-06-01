@@ -3,13 +3,13 @@
 @tailwind utilities;
 
 :root {
-  --background: 216 30% 97%;
+  --background: 210 24% 96%;
   --foreground: 222 47% 11%;
   --card: 0 0% 100%;
   --card-foreground: 222 47% 11%;
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%;
-  --primary: 210 100% 35%;
+  --primary: 211 76% 24%;
   --primary-foreground: 0 0% 100%;
   --secondary: 214 32% 91%;
   --secondary-foreground: 222 47% 11%;
@@ -21,7 +21,7 @@
   --destructive-foreground: 0 0% 100%;
   --border: 214 32% 91%;
   --input: 214 32% 91%;
-  --ring: 210 100% 35%;
+  --ring: 211 76% 24%;
   --radius: 0.5rem;
 }
 
@@ -36,15 +36,15 @@ html {
 body {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 16% 0%, rgba(0, 102, 179, 0.07), transparent 30rem),
-    radial-gradient(circle at 88% 10%, rgba(200, 168, 80, 0.09), transparent 26rem),
-    linear-gradient(180deg, #f0f4f8 0%, #e8edf3 42%, #e2e8f0 100%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0) 14rem),
+    repeating-linear-gradient(0deg, rgba(15, 23, 42, 0.025) 0, rgba(15, 23, 42, 0.025) 1px, transparent 1px, transparent 32px),
+    #eef2f5;
   color: hsl(var(--foreground));
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
 ::selection {
-  background: rgba(0, 102, 179, 0.18);
+  background: rgba(30, 64, 105, 0.18);
 }
 
 ::-webkit-scrollbar {
@@ -56,7 +56,7 @@ body {
   border: 2px solid transparent;
   border-radius: 999px;
   background-clip: padding-box;
-  background-color: rgba(14, 29, 66, 0.3);
+  background-color: rgba(71, 85, 105, 0.36);
 }
 
 ::-webkit-scrollbar-track {
@@ -66,19 +66,87 @@ body {
 /* FullCalendar theme */
 .fc {
   --fc-border-color: hsl(var(--border));
-  --fc-today-bg-color: #eff6ff;
-  --fc-button-bg-color: hsl(var(--primary));
-  --fc-button-border-color: hsl(var(--primary));
-  --fc-button-hover-bg-color: #004e8c;
-  --fc-button-hover-border-color: #004e8c;
-  --fc-button-active-bg-color: #003d6e;
-  --fc-button-active-border-color: #003d6e;
+  --fc-today-bg-color: #f0f7ff;
+  --fc-button-bg-color: #0f172a;
+  --fc-button-border-color: #0f172a;
+  --fc-button-hover-bg-color: #1d4f86;
+  --fc-button-hover-border-color: #1d4f86;
+  --fc-button-active-bg-color: #0066b3;
+  --fc-button-active-border-color: #0066b3;
   font-size: 0.875rem;
 }
 
+.fc .fc-toolbar {
+  gap: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid hsl(var(--border));
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  padding: 0.75rem 0.75rem 1rem;
+}
+
 .fc .fc-toolbar-title {
-  font-size: 1rem;
+  color: #0f172a;
+  font-size: 1.05rem;
   font-weight: 700;
+  letter-spacing: 0;
+}
+
+.fc .fc-button {
+  border-radius: 0.375rem !important;
+  box-shadow: none !important;
+  font-size: 0.8125rem !important;
+  font-weight: 650 !important;
+  line-height: 1 !important;
+  padding: 0.65rem 0.85rem !important;
+  text-transform: none !important;
+}
+
+.fc .fc-button:focus {
+  box-shadow: 0 0 0 3px rgba(0, 102, 179, 0.18) !important;
+}
+
+.fc .fc-prev-button,
+.fc .fc-next-button {
+  min-width: 2.4rem;
+  padding-left: 0.65rem !important;
+  padding-right: 0.65rem !important;
+}
+
+.fc .fc-today-button {
+  border-color: #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.fc .fc-today-button:not(:disabled):hover {
+  border-color: #94a3b8 !important;
+  background: #f8fafc !important;
+}
+
+.fc .fc-button-primary:disabled {
+  opacity: 0.55;
+}
+
+.fc .fc-button-group {
+  gap: 0.25rem;
+}
+
+.fc .fc-button-group > .fc-button {
+  border-radius: 0.375rem !important;
+}
+
+.fc .fc-col-header-cell-cushion {
+  padding: 0.7rem 0.5rem;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.fc .fc-daygrid-day-number {
+  color: #334155;
+  font-size: 0.8125rem;
+  font-weight: 650;
 }
 
 /* Page transition animation */

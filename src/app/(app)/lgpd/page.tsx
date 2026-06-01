@@ -19,7 +19,7 @@ export default async function LgpdPage() {
   return (
     <>
       <PageHeader title="LGPD e compliance" description="Painel básico de incidentes, solicitações, políticas, treinamentos e operadores." />
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
         <StatCard title="Processos mapeados" value={inventario.length} icon={FileText} tone="info" />
         <StatCard title="Solicitações abertas" value={solicitacoes.filter((item) => item.status !== "concluída").length} icon={Inbox} tone="warning" />
         <StatCard title="Incidentes registrados" value={incidentes.length} icon={ShieldAlert} tone="danger" />

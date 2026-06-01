@@ -4,9 +4,17 @@ import { createServerClient } from "@supabase/ssr";
 export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const hasDemoSession = request.cookies.get("cartoriohub_demo_session")?.value === "1";
+  const isLoginRoute = request.nextUrl.pathname.startsWith("/login");
+  const isProtectedRoute = !isLoginRoute && !request.nextUrl.pathname.startsWith("/_next");
 
   if (!supabaseUrl || !supabaseAnonKey) {
+    if (isProtectedRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("error", "configuracao");
+      return NextResponse.redirect(url);
+    }
+
     return NextResponse.next();
   }
 
@@ -28,19 +36,17 @@ export async function middleware(request: NextRequest) {
   });
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user;
 
-  const isLoginRoute = request.nextUrl.pathname.startsWith("/login");
-  const isProtectedRoute = !isLoginRoute && !request.nextUrl.pathname.startsWith("/_next");
-
-  if (!user && !hasDemoSession && isProtectedRoute) {
+  if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if ((user || hasDemoSession) && isLoginRoute) {
+  if (user && isLoginRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

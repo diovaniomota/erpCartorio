@@ -7,15 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { hasSupabaseConfig } from "@/lib/env";
 
 export default function LoginPage({
   searchParams,
 }: {
   searchParams?: Promise<{ error?: string }>;
 }) {
-  const supabaseConfigured = hasSupabaseConfig();
-
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <div className="grid min-h-screen lg:grid-cols-[minmax(0,1.08fr)_minmax(440px,0.92fr)]">
@@ -28,10 +25,10 @@ export default function LoginPage({
             sizes="58vw"
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0e1d42]/95 via-[#0e1d42]/76 to-[#0e1d42]/12" />
+          <div className="absolute inset-0 bg-[#111820]/[0.82]" />
           <div className="absolute inset-0 flex flex-col justify-between p-12 xl:p-16">
             <div className="flex items-center gap-3 text-white">
-              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-white/14 ring-1 ring-white/20">
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-white/[0.14] ring-1 ring-white/20">
                 <Landmark className="h-5 w-5" />
               </div>
               <div>
@@ -41,7 +38,7 @@ export default function LoginPage({
             </div>
 
             <div className="max-w-xl text-white">
-              <Badge className="border-white/18 bg-white/14 text-white hover:bg-white/14">
+              <Badge className="border-white/20 bg-white/10 text-white hover:bg-white/10">
                 Acesso administrativo
               </Badge>
               <h1 className="mt-6 text-4xl font-semibold leading-tight tracking-normal xl:text-5xl">
@@ -52,13 +49,13 @@ export default function LoginPage({
               </p>
             </div>
 
-            <div className="grid max-w-2xl grid-cols-3 gap-3">
+            <div className="grid max-w-2xl grid-cols-3 gap-4 border-t border-white/15 pt-5">
               {[
                 { title: "Financeiro", text: "Contas, caixa e boletos", icon: ShieldCheck },
                 { title: "Agenda", text: "Prazos e reuniões", icon: CalendarDays },
                 { title: "Equipe", text: "RH e demandas internas", icon: UsersRound },
               ].map((item) => (
-                <div key={item.title} className="rounded-lg border border-white/14 bg-white/12 p-4 text-white backdrop-blur">
+                <div key={item.title} className="text-white">
                   <item.icon className="h-5 w-5 text-[#c8a850]" />
                   <p className="mt-3 text-sm font-semibold">{item.title}</p>
                   <p className="mt-1 text-xs leading-5 text-white/70">{item.text}</p>
@@ -80,13 +77,11 @@ export default function LoginPage({
               </div>
             </div>
 
-            <Card className="border-slate-200 bg-white shadow-xl shadow-slate-200/70">
+            <Card className="border-slate-200 bg-white">
               <CardContent className="p-7 sm:p-8">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <Badge variant={supabaseConfigured ? "secondary" : "warning"}>
-                      {supabaseConfigured ? "Acesso restrito" : "Ambiente demo"}
-                    </Badge>
+                    <Badge variant="secondary">Acesso restrito</Badge>
                     <h2 className="mt-5 text-2xl font-semibold tracking-normal">Entrar no sistema</h2>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">
                       Use sua conta administrativa autorizada.
@@ -98,15 +93,6 @@ export default function LoginPage({
                 </div>
 
                 <LoginError searchParams={searchParams} />
-
-                {!supabaseConfigured ? (
-                  <Alert className="mt-6" variant="warning">
-                    <AlertTitle>Ambiente de demonstração ativo</AlertTitle>
-                    <AlertDescription>
-                      Configure as variáveis do Supabase para autenticar em produção.
-                    </AlertDescription>
-                  </Alert>
-                ) : null}
 
                 <form action={loginAction} className="mt-7 space-y-5">
                   <div className="space-y-2">
@@ -161,12 +147,17 @@ export default function LoginPage({
 async function LoginError({ searchParams }: { searchParams?: Promise<{ error?: string }> }) {
   const params = searchParams ? await searchParams : undefined;
 
-  if (params?.error !== "credenciais") return null;
+  if (!params?.error) return null;
+
+  const message =
+    params.error === "configuracao"
+      ? "A autenticação do Supabase não está configurada neste ambiente."
+      : "Confira o e-mail e a senha informados e tente novamente.";
 
   return (
     <Alert className="mt-6 border-red-200 bg-red-50 text-red-900" variant="destructive">
       <AlertTitle>Não foi possível entrar</AlertTitle>
-      <AlertDescription>Confira o e-mail e a senha informados e tente novamente.</AlertDescription>
+      <AlertDescription>{message}</AlertDescription>
     </Alert>
   );
 }

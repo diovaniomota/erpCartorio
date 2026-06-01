@@ -1,11 +1,9 @@
 import { EntityFormDialog, type EntityField } from "@/components/shared/entity-form-dialog";
 import { CalendarView } from "@/components/shared/calendar-view";
 import { DataTable } from "@/components/shared/data-table";
-import { ModuleTabs } from "@/components/shared/module-tabs";
 import { PageHeader } from "@/components/shared/page-header";
 import { createAgendaEvento, deleteAgendaEvento } from "@/modules/agenda/actions";
 import { getAgendaEventos } from "@/modules/agenda/queries";
-import { CalendarDays, Clock, FileClock, UsersRound } from "lucide-react";
 
 const fields: EntityField[] = [
   { name: "titulo", label: "Título", required: true },
@@ -42,14 +40,6 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
             : "Calendário mensal, semanal e diário para reuniões, vencimentos, férias, LGPD, tarefas e comunicados."
         }
         actions={<EntityFormDialog title="Novo evento" fields={fields} action={createAgendaEvento} />}
-      />
-      <ModuleTabs
-        tabs={[
-          { label: "Calendário geral", href: "/agenda", active: !filtro, count: events.length, icon: CalendarDays },
-          { label: "Reuniões", href: "/agenda?tipo=reuniao", active: filtro === "reuniao", count: filterEventsByTipo(events, "reuniao").length, icon: UsersRound },
-          { label: "Prazos", href: "/agenda?tipo=prazo", active: filtro === "prazo", count: filterEventsByTipo(events, "prazo").length, icon: FileClock },
-          { label: "Vencimentos", href: "/agenda?tipo=vencimento", active: filtro === "vencimento", count: filterEventsByTipo(events, "vencimento").length, icon: Clock },
-        ]}
       />
       <CalendarView events={visibleEvents} />
       <DataTable

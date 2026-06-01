@@ -34,7 +34,7 @@ export default async function LgpdInventarioDadosPage() {
         description="Mapeamento de processos, categorias de dados, bases legais, finalidade, retenção e compartilhamentos."
         actions={<EntityFormDialog title="Novo item de inventário" fields={fields} action={createLgpdInventarioDado} />}
       />
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
         <StatCard title="Processos mapeados" value={inventario.length} icon={Database} tone="info" />
         <StatCard title="Bases legais" value={basesLegais} icon={Scale} tone="success" />
         <StatCard title="Com compartilhamento" value={compartilhados} icon={Share2} tone="warning" />
