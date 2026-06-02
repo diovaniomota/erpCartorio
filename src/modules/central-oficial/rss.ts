@@ -67,13 +67,18 @@ function normalizeDate(raw: string): string | null {
 
 async function fetchFeed(source: FeedSource): Promise<RSSItem[]> {
   try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000); // 6s per feed
+
     const res = await fetch(source.url, {
+      signal: controller.signal,
       next: { revalidate: source.revalidate ?? 1800 },
       headers: {
-        "User-Agent": "Mozilla/5.0 CartórioHub/1.0 (RSS Reader)",
+        "User-Agent": "Mozilla/5.0 CartorioBrasil/1.0 (RSS Reader)",
         Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
       },
     });
+    clearTimeout(timer);
 
     if (!res.ok) return [];
 
@@ -122,16 +127,25 @@ async function fetchFeed(source: FeedSource): Promise<RSSItem[]> {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export async function getLiveOfficialFeed(): Promise<RSSItem[]> {
-  const results = await Promise.allSettled(FEEDS.map(fetchFeed));
+  try {
+    // Global 10s timeout — if all feeds are slow, give up and show empty
+    const timeout = new Promise<RSSItem[]>((resolve) => setTimeout(() => resolve([]), 10_000));
 
-  return results
-    .flatMap((r) => (r.status === "fulfilled" ? r.value : []))
-    .sort((a, b) => {
-      if (!a.publicado_em && !b.publicado_em) return 0;
-      if (!a.publicado_em) return 1;
-      if (!b.publicado_em) return -1;
-      return new Date(b.publicado_em).getTime() - new Date(a.publicado_em).getTime();
-    });
+    const feeds = Promise.allSettled(FEEDS.map(fetchFeed)).then((results) =>
+      results
+        .flatMap((r) => (r.status === "fulfilled" ? r.value : []))
+        .sort((a, b) => {
+          if (!a.publicado_em && !b.publicado_em) return 0;
+          if (!a.publicado_em) return 1;
+          if (!b.publicado_em) return -1;
+          return new Date(b.publicado_em).getTime() - new Date(a.publicado_em).getTime();
+        }),
+    );
+
+    return await Promise.race([feeds, timeout]);
+  } catch {
+    return [];
+  }
 }
 
 export async function getLiveFeedByOrg(): Promise<Record<string, RSSItem[]>> {
