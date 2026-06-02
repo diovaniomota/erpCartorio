@@ -1,43 +1,44 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { format } from "date-fns";
-import { Hash, Lock, MessageSquarePlus, Paperclip, Pin, Search, Send, UsersRound } from "lucide-react";
+import { Hash, Lock, MessageSquarePlus, Paperclip, Pin, Search, Send, UserPlus, UsersRound } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { EntityFormDialog, type EntityField } from "@/components/shared/entity-form-dialog";
 import type { ActionResult, ChatConversa, ChatMensagem, UserProfile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type ChatWorkspaceProps = {
   conversas: ChatConversa[];
   mensagens: ChatMensagem[];
+  usuarios: UserProfile[];
   activeConversaId?: string;
   currentUser: UserProfile;
-  createConversaAction: (input: unknown) => Promise<ActionResult>;
+  createConversaAction: (input: unknown) => Promise<ActionResult<ChatConversa>>;
   createMensagemAction: (input: unknown) => Promise<ActionResult<ChatMensagem>>;
 };
-
-const conversaFields: EntityField[] = [
-  { name: "nome", label: "Nome", required: true },
-  {
-    name: "tipo",
-    label: "Tipo",
-    type: "select",
-    defaultValue: "canal",
-    options: ["canal", "grupo", "individual"].map((value) => ({ label: value, value })),
-  },
-  { name: "setor", label: "Setor" },
-];
 
 export function ChatWorkspace({
   conversas,
   mensagens,
+  usuarios,
   activeConversaId,
   currentUser,
   createConversaAction,
@@ -75,6 +76,7 @@ export function ChatWorkspace({
 
   const pinnedMessages = mensagensDaConversa.filter((message) => message.fixada);
   const canais = conversas.filter((item) => item.tipo === "canal");
+  const diretas = conversas.filter((item) => item.tipo === "individual");
 
   function persistMessage(message: ChatMensagem) {
     setLocalMessages((current) => mergeMessages(current, [message]));
@@ -89,14 +91,13 @@ export function ChatWorkspace({
               <div>
                 <p className="text-lg font-semibold">Chat interno</p>
                 <p className="text-xs text-slate-300">
-                  {canais.length} canais · {localMessages.length} mensagens
+                  {canais.length} canais · {diretas.length} diretas · {localMessages.length} mensagens
                 </p>
               </div>
-              <EntityFormDialog
-                title="Nova conversa"
-                triggerLabel="Nova"
-                fields={conversaFields}
-                action={createConversaAction}
+              <NewConversationDialog
+                usuarios={usuarios}
+                currentUser={currentUser}
+                createConversaAction={createConversaAction}
               />
             </div>
             <div className="relative mt-4">
@@ -160,6 +161,178 @@ export function ChatWorkspace({
   );
 }
 
+type ConversationKind = "canal" | "individual";
+
+function NewConversationDialog({
+  usuarios,
+  currentUser,
+  createConversaAction,
+}: {
+  usuarios: UserProfile[];
+  currentUser: UserProfile;
+  createConversaAction: (input: unknown) => Promise<ActionResult<ChatConversa>>;
+}) {
+  const router = useRouter();
+  const availableUsers = useMemo(
+    () => usuarios.filter((usuario) => usuario.ativo && usuario.id !== currentUser.id),
+    [usuarios, currentUser.id],
+  );
+  const [open, setOpen] = useState(false);
+  const [tipo, setTipo] = useState<ConversationKind>(availableUsers.length ? "individual" : "canal");
+  const [nome, setNome] = useState("");
+  const [setor, setSetor] = useState("");
+  const [participanteId, setParticipanteId] = useState(availableUsers[0]?.id ?? "");
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (tipo === "individual" && !participanteId && availableUsers[0]) {
+      setParticipanteId(availableUsers[0].id);
+    }
+  }, [availableUsers, participanteId, tipo]);
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (tipo === "individual" && !participanteId) {
+      toast.error("Selecione um usuário para iniciar a conversa.");
+      return;
+    }
+
+    if (tipo === "canal" && !nome.trim()) {
+      toast.error("Informe o nome do canal.");
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await createConversaAction(
+        tipo === "individual"
+          ? { tipo, participante_id: participanteId }
+          : { tipo, nome: nome.trim(), setor: setor.trim() },
+      );
+
+      if (!result.ok || !result.data) {
+        toast.error(result.message);
+        return;
+      }
+
+      toast.success(result.message);
+      setOpen(false);
+      setNome("");
+      setSetor("");
+      router.push(`/chat/${result.data.id}`);
+      router.refresh();
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="bg-[#174a82] text-white hover:bg-[#123a66]">
+          <UserPlus className="h-4 w-4" />
+          Nova
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl overflow-hidden rounded-2xl p-0">
+        <form onSubmit={submit}>
+          <DialogHeader className="border-b border-slate-200 px-6 py-5">
+            <DialogTitle>Nova conversa</DialogTitle>
+            <DialogDescription>
+              Crie um canal interno ou uma conversa direta com outro usuário ativo.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-5 bg-slate-50 px-6 py-5 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="chat-tipo" className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Tipo
+              </Label>
+              <Select
+                value={tipo}
+                onValueChange={(value) => {
+                  const next = value as ConversationKind;
+                  setTipo(next);
+                  if (next === "individual" && !participanteId && availableUsers[0]) {
+                    setParticipanteId(availableUsers[0].id);
+                  }
+                }}
+              >
+                <SelectTrigger id="chat-tipo" className="h-11 rounded-xl border-slate-300 bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="individual">Conversa direta</SelectItem>
+                  <SelectItem value="canal">Canal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {tipo === "individual" ? (
+              <div className="space-y-2">
+                <Label htmlFor="chat-usuario" className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Usuário
+                </Label>
+                <Select value={participanteId} onValueChange={setParticipanteId} disabled={!availableUsers.length}>
+                  <SelectTrigger id="chat-usuario" className="h-11 rounded-xl border-slate-300 bg-white">
+                    <SelectValue placeholder="Selecione um usuário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableUsers.map((usuario) => (
+                      <SelectItem key={usuario.id} value={usuario.id}>
+                        {usuario.nome} · {usuario.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!availableUsers.length ? (
+                  <p className="text-xs text-red-600">Nenhum outro usuário ativo encontrado.</p>
+                ) : null}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="chat-nome" className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Nome
+                </Label>
+                <Input
+                  id="chat-nome"
+                  value={nome}
+                  onChange={(event) => setNome(event.target.value)}
+                  placeholder="Ex.: Financeiro"
+                  className="h-11 rounded-xl bg-white"
+                />
+              </div>
+            )}
+
+            {tipo === "canal" ? (
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="chat-setor" className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Setor
+                </Label>
+                <Input
+                  id="chat-setor"
+                  value={setor}
+                  onChange={(event) => setSetor(event.target.value)}
+                  placeholder="Ex.: administrativo"
+                  className="h-11 rounded-xl bg-white"
+                />
+              </div>
+            ) : null}
+          </div>
+
+          <DialogFooter className="border-t border-slate-200 bg-white px-6 py-4">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isPending || (tipo === "individual" && !availableUsers.length)}>
+              <MessageSquarePlus className="h-4 w-4" />
+              {isPending ? "Criando" : "Criar conversa"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ConversationRow({
   conversa,
   messages,
@@ -190,7 +363,7 @@ function ConversationRow({
             <span className={cn("text-[11px]", active ? "text-slate-500" : "text-slate-400")}>{latest ? formatChatTime(latest.created_at) : ""}</span>
           </div>
           <p className={cn("mt-1 line-clamp-1 text-xs", active ? "text-slate-500" : "text-slate-400")}>
-            {latest?.mensagem ?? (conversa.setor ? `Canal do setor ${conversa.setor}` : "Sem mensagens")}
+            {latest?.mensagem ?? conversationSubtitle(conversa)}
           </p>
         </div>
       </div>
@@ -203,12 +376,12 @@ function ThreadHeader({ conversa, messageCount, pinnedCount }: { conversa: ChatC
     <div className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white/[0.92] px-5 py-4 backdrop-blur">
       <div className="flex min-w-0 items-center gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white">
-          {conversa.tipo === "canal" ? <Hash className="h-5 w-5" /> : <UsersRound className="h-5 w-5" />}
+          {conversa.tipo === "canal" ? <Hash className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
         </div>
         <div className="min-w-0">
           <h1 className="truncate text-base font-semibold text-slate-950">{conversa.nome}</h1>
           <p className="truncate text-xs text-muted-foreground">
-            {conversa.setor ? `Setor ${conversa.setor}` : "Comunicação interna"} · {messageCount} mensagens
+            {conversationSubtitle(conversa)} · {messageCount} mensagens
           </p>
         </div>
       </div>
@@ -219,7 +392,7 @@ function ThreadHeader({ conversa, messageCount, pinnedCount }: { conversa: ChatC
             {pinnedCount}
           </Badge>
         ) : null}
-        <Badge variant="secondary">{conversa.tipo}</Badge>
+        <Badge variant="secondary">{conversationTypeLabel(conversa.tipo)}</Badge>
       </div>
     </div>
   );
@@ -396,7 +569,7 @@ function ThreadDetails({
       <div className="border-b border-slate-200 p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Detalhes</p>
         <h2 className="mt-2 text-lg font-semibold text-slate-950">{conversa.nome}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{conversa.setor ? `Setor ${conversa.setor}` : "Sem setor vinculado"}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{conversationSubtitle(conversa)}</p>
       </div>
       <div className="space-y-4 overflow-y-auto p-5">
         <div className="grid grid-cols-2 gap-2">
@@ -429,6 +602,18 @@ function SmallMetric({ label, value }: { label: string; value: number }) {
       <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );
+}
+
+function conversationSubtitle(conversa: ChatConversa) {
+  if (conversa.tipo === "individual") return "Conversa direta";
+  if (conversa.setor) return `Canal do setor ${conversa.setor}`;
+  return "Canal interno";
+}
+
+function conversationTypeLabel(tipo: string) {
+  if (tipo === "individual") return "direta";
+  if (tipo === "canal") return "canal";
+  return tipo;
 }
 
 function mergeMessages(...groups: ChatMensagem[][]) {

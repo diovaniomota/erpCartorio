@@ -2,26 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Cartório Brasil brand tokens ──────────────────────────────────────────── */
 :root {
-  --background: 210 24% 96%;
-  --foreground: 222 47% 11%;
+  /* Brand palette
+     --cb-green-deep : #1B4332   sidebar bg, hero sections
+     --cb-green-mid  : #2D6A4F   hover, active tints
+     --cb-gold       : #D4A427   primary accent, CTAs, active indicators
+     --cb-gold-light : #F5D87A   light gold for tints
+     --cb-gold-muted : #C59B28   darker gold for text on white
+  */
+
+  /* shadcn / Radix tokens — repointed to brand colors */
+  --background: 120 8% 95%;          /* very light green-tinted white */
+  --foreground: 150 30% 10%;         /* near-black with green tint */
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
+  --card-foreground: 150 30% 10%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --primary: 211 76% 24%;
+  --popover-foreground: 150 30% 10%;
+
+  /* Primary = brand green */
+  --primary: 153 44% 18%;            /* #1B4332 */
   --primary-foreground: 0 0% 100%;
-  --secondary: 214 32% 91%;
-  --secondary-foreground: 222 47% 11%;
-  --muted: 216 40% 96%;
-  --muted-foreground: 215 16% 47%;
-  --accent: 43 55% 55%;
-  --accent-foreground: 220 50% 12%;
+
+  --secondary: 150 15% 90%;
+  --secondary-foreground: 153 44% 18%;
+  --muted: 150 12% 94%;
+  --muted-foreground: 150 8% 46%;
+
+  /* Accent = brand gold */
+  --accent: 43 74% 49%;              /* #D4A427 */
+  --accent-foreground: 153 44% 10%;
+
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 211 76% 24%;
+  --border: 150 12% 88%;
+  --input: 150 12% 88%;
+  --ring: 43 74% 49%;                /* gold focus ring */
   --radius: 0.5rem;
 }
 
@@ -36,15 +52,15 @@ html {
 body {
   min-height: 100vh;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0) 14rem),
-    repeating-linear-gradient(0deg, rgba(15, 23, 42, 0.025) 0, rgba(15, 23, 42, 0.025) 1px, transparent 1px, transparent 32px),
-    #eef2f5;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 14rem),
+    repeating-linear-gradient(0deg, rgba(27, 67, 50, 0.03) 0, rgba(27, 67, 50, 0.03) 1px, transparent 1px, transparent 32px),
+    #eef3ee;
   color: hsl(var(--foreground));
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
 ::selection {
-  background: rgba(30, 64, 105, 0.18);
+  background: rgba(212, 164, 39, 0.22);
 }
 
 ::-webkit-scrollbar {
@@ -63,16 +79,16 @@ body {
   background: transparent;
 }
 
-/* FullCalendar theme */
+/* FullCalendar theme — Cartório Brasil brand */
 .fc {
   --fc-border-color: hsl(var(--border));
-  --fc-today-bg-color: #f0f7ff;
-  --fc-button-bg-color: #0f172a;
-  --fc-button-border-color: #0f172a;
-  --fc-button-hover-bg-color: #1d4f86;
-  --fc-button-hover-border-color: #1d4f86;
-  --fc-button-active-bg-color: #0066b3;
-  --fc-button-active-border-color: #0066b3;
+  --fc-today-bg-color: #f0f7f0;
+  --fc-button-bg-color: #1B4332;
+  --fc-button-border-color: #1B4332;
+  --fc-button-hover-bg-color: #2D6A4F;
+  --fc-button-hover-border-color: #2D6A4F;
+  --fc-button-active-bg-color: #D4A427;
+  --fc-button-active-border-color: #C59B28;
   font-size: 0.875rem;
 }
 

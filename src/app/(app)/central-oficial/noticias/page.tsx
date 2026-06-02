@@ -1,222 +1,238 @@
 import {
-  Bell,
+  AlertCircle,
   ExternalLink,
-  FileText,
   Newspaper,
+  RefreshCw,
   Star,
+  Wifi,
 } from "lucide-react";
 import { EntityFormDialog, type EntityField } from "@/components/shared/entity-form-dialog";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { createOfficialUpdate, deleteOfficialUpdate } from "@/modules/central-oficial/actions";
+import { createOfficialUpdate } from "@/modules/central-oficial/actions";
 import { getOfficialSources, getOfficialUpdates } from "@/modules/central-oficial/queries";
+import { getLiveOfficialFeed, type RSSItem } from "@/modules/central-oficial/rss";
 import { cn, formatDate } from "@/lib/utils";
 
-// ── Órgão config ──────────────────────────────────────────────────────────────
-const orgMap: Record<string, { bg: string; text: string; border: string; ring: string }> = {
-  TJSC: { bg: "bg-blue-600",   text: "text-white", border: "border-blue-700",   ring: "ring-blue-200" },
-  STJ:  { bg: "bg-purple-700", text: "text-white", border: "border-purple-800", ring: "ring-purple-200" },
-  STF:  { bg: "bg-red-700",    text: "text-white", border: "border-red-800",    ring: "ring-red-200" },
-  CNJ:  { bg: "bg-teal-600",   text: "text-white", border: "border-teal-700",   ring: "ring-teal-200" },
+// ── Org palette ───────────────────────────────────────────────────────────────
+const ORG: Record<string, { solid: string; soft: string; text: string; ring: string }> = {
+  STF:  { solid: "bg-red-700",    soft: "bg-red-50",    text: "text-red-800",    ring: "ring-red-200" },
+  STJ:  { solid: "bg-purple-700", soft: "bg-purple-50", text: "text-purple-800", ring: "ring-purple-200" },
+  CNJ:  { solid: "bg-teal-600",   soft: "bg-teal-50",   text: "text-teal-800",   ring: "ring-teal-200" },
+  TJSC: { solid: "bg-blue-700",   soft: "bg-blue-50",   text: "text-blue-800",   ring: "ring-blue-200" },
 };
 
-function getOrg(orgao: string) {
-  const key = Object.keys(orgMap).find((k) => orgao?.toUpperCase().includes(k));
+function orgConf(orgao: string) {
+  const key = Object.keys(ORG).find((k) => orgao?.toUpperCase().includes(k));
   return key
-    ? { ...orgMap[key], abbr: key }
-    : { bg: "bg-slate-500", text: "text-white", border: "border-slate-600", ring: "ring-slate-200", abbr: orgao?.split(/[\s,/]/)[0]?.toUpperCase().slice(0, 4) ?? "—" };
+    ? { ...ORG[key], abbr: key }
+    : { solid: "bg-slate-600", soft: "bg-slate-50", text: "text-slate-700", ring: "ring-slate-200", abbr: orgao?.slice(0, 4).toUpperCase() ?? "—" };
 }
 
-const relevBg: Record<string, string> = {
-  crítica: "border-l-red-500 bg-red-50/30",
+const relevBorder: Record<string, string> = {
+  crítica: "border-l-red-500",
   alta:    "border-l-orange-500",
   média:   "border-l-amber-400",
   baixa:   "border-l-slate-200",
 };
 
 export default async function NoticiasOficiaisPage() {
-  const [updates, sources] = await Promise.all([getOfficialUpdates(), getOfficialSources()]);
-  const noticias = updates.filter((u) => u.tipo === "notícia");
+  const [liveFeed, manualUpdates, sources] = await Promise.all([
+    getLiveOfficialFeed(),
+    getOfficialUpdates(),
+    getOfficialSources(),
+  ]);
 
-  const novas      = noticias.filter((u) => u.status === "nova");
-  const importantes = noticias.filter((u) => u.importante);
-  const criticas   = noticias.filter((u) => u.relevancia === "crítica" || u.relevancia === "alta");
+  const manuais = manualUpdates.filter((u) => u.tipo === "notícia");
 
-  // Agrupamento por órgão
-  const porOrgao = ["TJSC", "STJ", "STF", "CNJ"].map((org) => ({
+  // Stats por órgão do feed ao vivo
+  const feedStats = ["STF", "STJ", "CNJ", "TJSC"].map((org) => ({
     org,
-    count: noticias.filter((u) => u.orgao?.toUpperCase().includes(org)).length,
+    count: liveFeed.filter((i) => i.orgao === org).length,
+    online: liveFeed.some((i) => i.orgao === org),
   }));
 
   const fields: EntityField[] = [
     { name: "titulo",      label: "Título",      required: true },
     { name: "source_id",   label: "Fonte",       type: "select", options: sources.map((s) => ({ label: s.nome, value: s.id })) },
     { name: "orgao",       label: "Órgão",       required: true },
-    { name: "tipo",        label: "Tipo",        type: "select", defaultValue: "notícia", options: ["notícia", "comunicado", "provimento", "publicação oficial", "alerta", "norma", "portaria"].map((value) => ({ label: value, value })) },
-    { name: "relevancia",  label: "Relevância",  type: "select", defaultValue: "média",   options: ["baixa", "média", "alta", "crítica"].map((value) => ({ label: value, value })) },
-    { name: "status",      label: "Status",      type: "select", defaultValue: "nova",    options: ["nova", "lida", "em análise", "gerou tarefa", "arquivada"].map((value) => ({ label: value, value })) },
+    { name: "tipo",        label: "Tipo",        type: "select", defaultValue: "notícia", options: ["notícia", "comunicado", "provimento", "publicação oficial", "alerta", "norma", "portaria"].map((v) => ({ label: v, value: v })) },
+    { name: "relevancia",  label: "Relevância",  type: "select", defaultValue: "média",   options: ["baixa", "média", "alta", "crítica"].map((v) => ({ label: v, value: v })) },
+    { name: "status",      label: "Status",      type: "select", defaultValue: "nova",    options: ["nova", "lida", "em análise", "gerou tarefa", "arquivada"].map((v) => ({ label: v, value: v })) },
     { name: "publicado_em",label: "Publicado em",type: "date" },
     { name: "url_original",label: "URL original" },
     { name: "anexo_url",   label: "URL do PDF" },
     { name: "importante",  label: "Importante",  type: "checkbox" },
     { name: "resumo",      label: "Resumo",      type: "textarea" },
-    { name: "conteudo",    label: "Conteúdo",    type: "textarea" },
   ];
 
   return (
     <>
       <PageHeader
         title="Notícias oficiais"
-        description="Feed de publicações do TJSC, STJ, STF, CNJ e demais órgãos — relevância, status de leitura e vínculos internos."
-        actions={<EntityFormDialog title="Nova notícia" fields={fields} action={createOfficialUpdate} />}
+        description="Feed ao vivo do STF, STJ, CNJ e TJSC — atualizado automaticamente a cada 30 minutos via RSS."
+        actions={<EntityFormDialog title="Adicionar notícia manual" fields={fields} action={createOfficialUpdate} />}
       />
 
-      {/* Órgãos monitorados */}
+      {/* Status dos feeds */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {porOrgao.map(({ org, count }) => {
-          const conf = orgMap[org];
+        {feedStats.map(({ org, count, online }) => {
+          const c = ORG[org];
           return (
-            <div key={org} className={cn("flex items-center gap-3 rounded-xl border px-4 py-3.5", conf.ring, "ring-1")}>
-              <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-black", conf.bg, conf.text)}>
-                {org}
+            <div key={org} className={cn("rounded-xl border bg-white p-4 ring-1", c.ring)}>
+              <div className="flex items-center justify-between gap-2">
+                <span className={cn("rounded-lg px-2.5 py-1.5 text-sm font-black text-white", c.solid)}>
+                  {org}
+                </span>
+                <span className={cn("flex items-center gap-1 text-[10px] font-semibold", online ? "text-emerald-600" : "text-slate-400")}>
+                  {online
+                    ? <><Wifi className="h-3 w-3" /> online</>
+                    : <><AlertCircle className="h-3 w-3" /> offline</>
+                  }
+                </span>
               </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{org}</p>
-                <p className="text-xl font-bold tabular-nums text-slate-900">{count}</p>
-              </div>
+              <p className={cn("mt-3 text-3xl font-bold tabular-nums", c.text)}>{count}</p>
+              <p className="mt-0.5 text-xs text-slate-400">notícias</p>
             </div>
           );
         })}
       </div>
 
-      {/* Stats strip */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className={cn("rounded-xl border border-l-4 border-slate-200 bg-white px-5 py-3", novas.length > 0 ? "border-l-red-500" : "border-l-slate-300")}>
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Não lidas</p>
-          <p className={cn("mt-1 text-2xl font-bold tabular-nums", novas.length > 0 ? "text-red-700" : "text-slate-400")}>{novas.length}</p>
-        </div>
-        <div className="rounded-xl border border-l-4 border-slate-200 border-l-amber-500 bg-white px-5 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Importantes</p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-amber-700">{importantes.length}</p>
-        </div>
-        <div className="rounded-xl border border-l-4 border-slate-200 border-l-orange-500 bg-white px-5 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Alta/Crítica</p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-orange-700">{criticas.length}</p>
-        </div>
+      {/* Live badge */}
+      <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3">
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+          </span>
+          FEED AO VIVO
+        </span>
+        <span className="text-xs text-emerald-600">
+          {liveFeed.length} publicação{liveFeed.length !== 1 ? "ões" : ""} carregada{liveFeed.length !== 1 ? "s" : ""} via RSS
+        </span>
+        <span className="ml-auto flex items-center gap-1 text-[10px] text-emerald-500">
+          <RefreshCw className="h-3 w-3" /> Atualiza a cada 30 min
+        </span>
       </div>
 
-      {/* News feed */}
-      <section className="rounded-xl border border-slate-200 bg-white">
-        <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
-          <Newspaper className="h-4 w-4 text-amber-500" />
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Feed de notícias</p>
-            <h2 className="text-base font-semibold text-slate-900">Publicações oficiais</h2>
+      {/* Live feed */}
+      {liveFeed.length > 0 ? (
+        <section className="rounded-xl border border-slate-200 bg-white">
+          <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
+            <Newspaper className="h-4 w-4 text-emerald-500" />
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Ao vivo · RSS</p>
+              <h2 className="text-base font-semibold text-slate-900">Últimas publicações oficiais</h2>
+            </div>
+            <span className="ml-auto rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+              {liveFeed.length} itens
+            </span>
           </div>
-          <span className="ml-auto rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-            {noticias.length}
-          </span>
-        </div>
-
-        {noticias.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <Newspaper className="h-10 w-10 text-slate-200" />
-            <p className="text-sm font-medium text-slate-400">Nenhuma notícia cadastrada.</p>
-            <p className="text-xs text-slate-300">Use o botão acima para registrar publicações oficiais.</p>
-          </div>
-        ) : (
           <div className="divide-y divide-slate-100">
-            {noticias.map((u) => {
-              const org     = getOrg(u.orgao ?? "");
-              const isNew   = u.status === "nova";
-              const relBg   = relevBg[u.relevancia] ?? "border-l-slate-200";
+            {liveFeed.map((item, i) => (
+              <LiveFeedItem key={`${item.orgao}-${i}`} item={item} />
+            ))}
+          </div>
+        </section>
+      ) : (
+        <div className="flex items-center gap-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+          <AlertCircle className="h-5 w-5 shrink-0 text-amber-500" />
+          <div>
+            <p className="text-sm font-medium text-amber-800">Feeds indisponíveis no momento</p>
+            <p className="text-xs text-amber-600">Os servidores dos tribunais podem estar temporariamente inacessíveis. Tente novamente em alguns minutos.</p>
+          </div>
+        </div>
+      )}
 
+      {/* Manual entries */}
+      {manuais.length > 0 && (
+        <section className="rounded-xl border border-slate-200 bg-white">
+          <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
+            <Star className="h-4 w-4 text-amber-500" />
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Cadastro interno</p>
+              <h2 className="text-base font-semibold text-slate-900">Notícias adicionadas manualmente</h2>
+            </div>
+            <span className="ml-auto rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+              {manuais.length}
+            </span>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {manuais.map((u) => {
+              const org  = orgConf(u.orgao ?? "");
+              const bdr  = relevBorder[u.relevancia] ?? "border-l-slate-200";
               return (
-                <article
-                  key={u.id}
-                  className={cn(
-                    "group flex gap-4 border-l-4 px-5 py-5 transition-colors hover:bg-slate-50/60",
-                    relBg,
-                  )}
-                >
-                  {/* Org badge */}
-                  <div className="shrink-0">
-                    <span className={cn(
-                      "flex h-11 w-11 items-center justify-center rounded-xl text-xs font-black shadow-sm",
-                      org.bg, org.text,
-                    )}>
-                      {org.abbr}
-                    </span>
-                  </div>
-
-                  {/* Content */}
+                <article key={u.id} className={cn("flex gap-4 border-l-4 px-5 py-4 transition-colors hover:bg-slate-50/60", bdr)}>
+                  <span className={cn("mt-0.5 shrink-0 rounded-lg px-2 py-1 text-[11px] font-black text-white", org.solid)}>
+                    {org.abbr}
+                  </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-start gap-2">
-                      {u.importante && (
-                        <Star className="mt-0.5 h-4 w-4 shrink-0 fill-yellow-400 text-yellow-400" />
-                      )}
-                      <h3 className={cn(
-                        "text-[15px] font-semibold leading-snug",
-                        isNew ? "text-slate-900" : "text-slate-500",
-                      )}>
-                        {u.titulo}
-                        {isNew && (
-                          <span className="ml-2 inline-block rounded-full bg-red-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-red-700">
-                            novo
-                          </span>
-                        )}
-                      </h3>
+                    <div className="flex items-center gap-1.5">
+                      {u.importante && <Star className="h-3.5 w-3.5 shrink-0 fill-yellow-400 text-yellow-400" />}
+                      <p className="line-clamp-1 text-sm font-semibold text-slate-900">{u.titulo}</p>
                     </div>
-
-                    {u.resumo && (
-                      <p className="mt-1.5 line-clamp-2 text-sm text-slate-500 leading-relaxed">
-                        {u.resumo}
-                      </p>
-                    )}
-
-                    <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-                      {u.publicado_em && (
-                        <span className="text-xs text-slate-400">{formatDate(u.publicado_em)}</span>
-                      )}
-                      {u.fonte_nome && (
-                        <span className="text-xs text-slate-400">· {u.fonte_nome}</span>
-                      )}
-                      <span className={cn(
-                        "rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                        u.relevancia === "crítica" ? "bg-red-100 text-red-800" :
-                        u.relevancia === "alta"    ? "bg-orange-100 text-orange-800" :
-                        u.relevancia === "média"   ? "bg-amber-100 text-amber-800" :
-                        "bg-slate-100 text-slate-500"
-                      )}>
-                        {u.relevancia}
-                      </span>
+                    {u.resumo && <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{u.resumo}</p>}
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                      {u.publicado_em && <span>{formatDate(u.publicado_em)}</span>}
+                      {u.fonte_nome   && <span>· {u.fonte_nome}</span>}
                     </div>
                   </div>
-
-                  {/* Right */}
-                  <div className="flex shrink-0 flex-col items-end gap-2.5">
-                    <StatusBadge status={u.status} />
-                    <div className="flex gap-2">
-                      {u.url_original && (
-                        <a href={u.url_original} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-500 hover:border-blue-300 hover:text-blue-600">
-                          <ExternalLink className="h-3 w-3" /> Link
-                        </a>
-                      )}
-                      {u.anexo_url && (
-                        <a href={u.anexo_url} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-500 hover:border-red-300 hover:text-red-600">
-                          <FileText className="h-3 w-3" /> PDF
-                        </a>
-                      )}
-                    </div>
-                  </div>
+                  <StatusBadge status={u.status} />
                 </article>
               );
             })}
           </div>
-        )}
-      </section>
+        </section>
+      )}
     </>
+  );
+}
+
+// ── LiveFeedItem ──────────────────────────────────────────────────────────────
+function LiveFeedItem({ item }: { item: RSSItem }) {
+  const org = orgConf(item.orgao);
+
+  return (
+    <article className="group flex gap-4 px-5 py-4 transition-colors hover:bg-slate-50/60">
+      {/* Org badge */}
+      <div className="shrink-0 pt-0.5">
+        <span className={cn(
+          "flex h-11 w-11 items-center justify-center rounded-xl text-xs font-black text-white shadow-sm",
+          org.solid,
+        )}>
+          {org.abbr}
+        </span>
+      </div>
+
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        <p className="text-[15px] font-semibold leading-snug text-slate-900 group-hover:text-blue-700">
+          {item.titulo}
+        </p>
+        {item.descricao && (
+          <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-slate-500">
+            {item.descricao}
+          </p>
+        )}
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 text-[11px] text-slate-400">
+          {item.publicado_em && <span>{formatDate(item.publicado_em)}</span>}
+          <span>· {item.fonte}</span>
+        </div>
+      </div>
+
+      {/* Link */}
+      {item.link && (
+        <a
+          href={item.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-auto flex shrink-0 items-center gap-1.5 self-start rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-500 transition-colors hover:border-blue-300 hover:text-blue-600"
+          aria-label={`Abrir notícia: ${item.titulo}`}
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+          Abrir
+        </a>
+      )}
+    </article>
   );
 }

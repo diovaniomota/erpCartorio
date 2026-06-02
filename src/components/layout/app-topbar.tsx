@@ -19,8 +19,8 @@ export async function AppTopbar() {
         <MobileSidebar />
       </Suspense>
       <div className="hidden min-w-0 flex-1 lg:block">
-        <div className="inline-flex max-w-full items-center gap-3 border-l-2 border-emerald-500 pl-3">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+        <div className="inline-flex max-w-full items-center gap-3 border-l-2 pl-3" style={{ borderColor: "#D4A427" }}>
+          <span className="h-2 w-2 rounded-full" style={{ background: "#D4A427" }} />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold leading-5 text-slate-950">{context.cartorio.nome}</p>
             <p className="truncate text-xs text-slate-500">Base administrativa conectada</p>
